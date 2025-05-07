@@ -1,3 +1,4 @@
+# Android Studio
 *.iml
 .gradle
 /local.properties
@@ -8,8 +9,18 @@
 /.idea/navEditor.xml
 /.idea/assetWizardSettings.xml
 .DS_Store
+
+# Build output
 /build
+/app/build
 /captures
 .externalNativeBuild
 .cxx
-local.properties
+
+# Firebase (DO NOT COMMIT THIS)
+app/google-services.json
+
+# Others
+*.apk
+*.keystore
+
