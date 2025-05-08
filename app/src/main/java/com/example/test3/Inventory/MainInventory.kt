@@ -1,7 +1,5 @@
-package com.example.test3
+package com.example.test3.Inventory
 
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -20,9 +18,6 @@ import androidx.compose.ui.text.googlefonts.GoogleFont
 import androidx.compose.ui.text.googlefonts.Font
 import androidx.compose.ui.text.googlefonts.GoogleFont.Provider
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.EmojiFoodBeverage
@@ -32,6 +27,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.text.font.FontWeight
+import com.example.test3.R
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 
 
@@ -250,7 +246,7 @@ fun BottomNavBar() {
             icon = {
                 Icon(
                     Icons.Default.Settings,
-                    contentDescription = "Settings",
+                    contentDescription = "com/example/test3/Settings",
                     modifier = Modifier.offset(y = (-4).dp)
                 )
             },

@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import com.example.test3.Settings.Settings
 import kotlinx.coroutines.delay
 
 class MainActivity : ComponentActivity() {
