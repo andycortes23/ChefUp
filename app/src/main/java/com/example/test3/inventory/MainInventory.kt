@@ -1,4 +1,4 @@
-package com.example.test3.Inventory
+package com.example.test3.inventory
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
@@ -246,7 +246,7 @@ fun BottomNavBar() {
             icon = {
                 Icon(
                     Icons.Default.Settings,
-                    contentDescription = "com/example/test3/Settings",
+                    contentDescription = "com/example/test3/settings",
                     modifier = Modifier.offset(y = (-4).dp)
                 )
             },

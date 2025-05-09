@@ -13,7 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
-import com.example.test3.Settings.Settings
+import com.example.test3.settings.TermsAndConditions
 import kotlinx.coroutines.delay
 
 class MainActivity : ComponentActivity() {
@@ -53,7 +53,7 @@ fun SplashScreenWithFadeTransition() {
                     .fillMaxSize()
                     .background(Color.Black) // black to match the status bar
             ) {
-                Settings() // Your main app screen
+                TermsAndConditions() // Your main app screen
             }
         }
     }

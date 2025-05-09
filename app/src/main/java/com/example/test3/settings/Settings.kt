@@ -1,4 +1,4 @@
-package com.example.test3.Settings
+package com.example.test3.settings
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -23,7 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import com.example.test3.Inventory.BottomNavBar
+import com.example.test3.inventory.BottomNavBar
 import com.example.test3.R
 
 
@@ -56,12 +56,12 @@ fun Settings() {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         imageVector = Icons.Default.Settings,
-                        contentDescription = "com/example/test3/Settings",
+                        contentDescription = "com/example/test3/settings",
                         modifier = Modifier.size(24.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "com/example/test3/Settings",
+                        text = "Settings",
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold
                     )
