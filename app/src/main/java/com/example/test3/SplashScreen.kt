@@ -21,26 +21,24 @@ fun SplashPage() {
 
     SideEffect {
         systemUiController.setStatusBarColor(
-            color = Color(0xFFD4FF99), // or whatever background your inventory needs
-            darkIcons = true // Light icons = false, Dark icons = true
+            color = Color(0xFFC2FF87),
+            darkIcons = true
         )
     }
 
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFC2FF87))
-            .padding(start = 56.dp, top = 309.dp, end = 56.dp, bottom = 308.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+            .background(Color(0xFFC2FF87)),
+        contentAlignment = Alignment.Center
     ) {
         Image(
-            painter = painterResource(id = R.drawable.image1), // replace with your actual image name
+            painter = painterResource(id = R.drawable.image1),
             contentDescription = "Splash Logo",
-            contentScale = ContentScale.Crop,
-            alignment = Alignment.TopCenter,
+            contentScale = ContentScale.Fit, // or use Crop if you want it to fill vertically
             modifier = Modifier
-                .fillMaxSize()
+                .fillMaxWidth(0.6f) // image fills 60% of screen width, adjust as needed
+                .aspectRatio(1f)    // keeps image square
         )
     }
 }
