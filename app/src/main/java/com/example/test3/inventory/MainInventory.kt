@@ -28,6 +28,7 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.text.font.FontWeight
 import com.example.test3.R
+import com.example.test3.Screen
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 
 
@@ -45,7 +46,7 @@ val fontFamily2 = FontFamily(
 )
 
 @Composable
-fun Inventory() {
+fun InventoryScreen() {
     val systemUiController = rememberSystemUiController()
 
     SideEffect {
@@ -71,7 +72,6 @@ fun Inventory() {
             Spacer(modifier = Modifier.height(16.dp))
             StorageSection()
             Spacer(modifier = Modifier.weight(1f))
-            BottomNavBar()
         }
     }
 }
@@ -192,66 +192,25 @@ fun StorageSection() {
 }
 
 @Composable
-fun BottomNavBar() {
+fun BottomNavBar(
+    currentScreen: Screen,
+    onTabSelected: (Screen) -> Unit
+) {
     BottomNavigation(
         backgroundColor = Color.White,
         contentColor = Color.Black,
         modifier = Modifier.height(56.dp)
     ) {
         BottomNavigationItem(
-            icon = {
-                Icon(
-                    Icons.Default.Home,
-                    contentDescription = "Home",
-                    modifier = Modifier.offset(y = (-4).dp)
-                )
-            },
-            selected = true,
-            onClick = {}
+            icon = { Icon(Icons.Default.Home, contentDescription = "Home", modifier = Modifier.offset(y = (-4).dp)) },
+            selected = currentScreen is Screen.Home,
+            onClick = { onTabSelected(Screen.Home) }
         )
         BottomNavigationItem(
-            icon = {
-                Icon(
-                    Icons.Default.CameraAlt,
-                    contentDescription = "Camera",
-                    modifier = Modifier.offset(y = (-4).dp)
-                )
-            },
-            selected = false,
-            onClick = {}
-        )
-        BottomNavigationItem(
-            icon = {
-                Icon(
-                    Icons.Default.Map,
-                    contentDescription = "Map",
-                    modifier = Modifier.offset(y = (-4).dp)
-                )
-            },
-            selected = false,
-            onClick = {}
-        )
-        BottomNavigationItem(
-            icon = {
-                Icon(
-                    Icons.Default.EmojiFoodBeverage,
-                    contentDescription = "Chef",
-                    modifier = Modifier.offset(y = (-4).dp)
-                )
-            },
-            selected = false,
-            onClick = {}
-        )
-        BottomNavigationItem(
-            icon = {
-                Icon(
-                    Icons.Default.Settings,
-                    contentDescription = "com/example/test3/settings",
-                    modifier = Modifier.offset(y = (-4).dp)
-                )
-            },
-            selected = false,
-            onClick = {}
+            icon = { Icon(Icons.Default.Settings, contentDescription = "Settings", modifier = Modifier.offset(y = (-4).dp)) },
+            selected = currentScreen is Screen.Settings,
+            onClick = { onTabSelected(Screen.Settings) }
         )
     }
 }
+

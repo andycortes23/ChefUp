@@ -33,8 +33,14 @@ import com.example.test3.settings.PrivacyPolicyScreen
 import com.example.test3.settings.TermsAndConditionsScreen
 import com.example.test3.signup.NameEntryScreen
 import androidx.compose.ui.unit.sp
+import com.example.test3.inventory.BottomNavBar
 import com.example.test3.signup.NameEntryScreen
-import com.example.test3.inventory.Inventory
+import com.example.test3.inventory.InventoryScreen
+import com.example.test3.login.LoginScreen
+import com.google.firebase.firestore.FirebaseFirestore
+import com.example.test3.settings.Settings
+import androidx.compose.material3.Scaffold
+
 
 
 /*
@@ -42,13 +48,12 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Status bar styling
         window.statusBarColor = AndroidColor.BLACK
         WindowCompat.setDecorFitsSystemWindows(window, true)
         WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = false
 
         setContent {
-            AboutUsScreen()
+            AboutUsScreen() //Change this to the screen you would like to displau and comment out the bottom code
         }
     }
 }
@@ -57,15 +62,22 @@ class MainActivity : ComponentActivity() {
 sealed class Screen {
     object Splash : Screen()
     object SignUp : Screen()
-    data class NameEntry(val userId: String, val email: String) : Screen()
+    object Login : Screen()
+    data class NameEntry(val userId: String, val email: String, val fromGoogle: Boolean = false) : Screen()
     object Home : Screen()
+    object Terms : Screen()
+    object Privacy : Screen()
+    object Settings : Screen()
+    object About : Screen()
+    object Profile : Screen()
+
 }
+
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // ✅ Make status bar visible with dark icons
         window.statusBarColor = AndroidColor.WHITE
         WindowCompat.setDecorFitsSystemWindows(window, true)
         WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = true
@@ -76,6 +88,7 @@ class MainActivity : ComponentActivity() {
             val context = LocalContext.current
             var toastMessage by remember { mutableStateOf<String?>(null) }
             var currentScreen by remember { mutableStateOf<Screen>(Screen.Splash) }
+            var previousScreen by remember { mutableStateOf<Screen?>(null) }
 
             val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestIdToken(getString(R.string.default_web_client_id))
@@ -96,7 +109,21 @@ class MainActivity : ComponentActivity() {
                             if (authTask.isSuccessful) {
                                 val user = FirebaseAuth.getInstance().currentUser
                                 if (user != null) {
-                                    currentScreen = Screen.NameEntry(user.uid, user.email ?: "")
+                                    val db = FirebaseFirestore.getInstance()
+                                    db.collection("users").document(user.uid)
+                                        .set(
+                                            mapOf(
+                                                "firstName" to account.givenName,
+                                                "lastName" to account.familyName,
+                                                "email" to account.email
+                                            )
+                                        )
+                                        .addOnSuccessListener {
+                                            currentScreen = Screen.Home
+                                        }
+                                        .addOnFailureListener {
+                                            toastMessage = "Failed to save Google user data"
+                                        }
                                 }
                             } else {
                                 toastMessage = "Google sign-in failed"
@@ -107,56 +134,128 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
-            Crossfade(targetState = currentScreen, animationSpec = tween(500)) { screen ->
-                when (screen) {
-                    is Screen.Splash -> SplashScreenWithDelay(onDone = {
-                        currentScreen = Screen.SignUp
-                    })
-
-                    is Screen.SignUp -> SignUp(
-                        onContinueClicked = { email, password ->
-                            FirebaseAuth.getInstance()
-                                .createUserWithEmailAndPassword(email, password)
-                                .addOnCompleteListener { task ->
-                                    if (task.isSuccessful) {
-                                        val user = FirebaseAuth.getInstance().currentUser
-                                        if (user != null) {
-                                            currentScreen = Screen.NameEntry(user.uid, user.email ?: "")
-                                        }
-                                    } else {
-                                        toastMessage = task.exception?.message ?: "Sign-up failed"
-                                    }
-                                }
-                        },
-                        onGoogleClicked = {
-                            val intent = googleSignInClient.signInIntent
-                            launcher.launch(intent)
-                        },
-                        onLoginClicked = {
-                            toastMessage = "Navigate to login"
-                        }
-                    )
-
-                    is Screen.NameEntry -> NameEntryScreen(
-                        userId = screen.userId,
-                        userEmail = screen.email,
-                        onNameSubmitted = {
-                            currentScreen = Screen.Home
-                        }
-                    )
-
-                    is Screen.Home -> Inventory()
-
+            Scaffold(
+                bottomBar = {
+                    if (currentScreen is Screen.Home || currentScreen is Screen.Settings) {
+                        BottomNavBar(
+                            currentScreen = currentScreen,
+                            onTabSelected = { selected -> currentScreen = selected }
+                        )
+                    }
                 }
+            ) { innerPadding ->
+                Crossfade(targetState = currentScreen, animationSpec = tween(500)) { screen ->
+                    when (screen) {
+                        is Screen.Splash -> SplashScreenWithDelay { currentScreen = Screen.SignUp }
 
-                toastMessage?.let {
-                    Toast.makeText(context, it, Toast.LENGTH_LONG).show()
-                    toastMessage = null
+                        is Screen.SignUp -> Box(Modifier.padding(bottom = innerPadding.calculateBottomPadding())) {
+                            SignUp(
+                                onContinueClicked = { email, password ->
+                                    FirebaseAuth.getInstance()
+                                        .createUserWithEmailAndPassword(email, password)
+                                        .addOnCompleteListener { task ->
+                                            if (task.isSuccessful) {
+                                                val user = FirebaseAuth.getInstance().currentUser
+                                                if (user != null) {
+                                                    currentScreen = Screen.NameEntry(user.uid, user.email ?: "")
+                                                }
+                                            } else {
+                                                toastMessage = task.exception?.message ?: "Sign-up failed"
+                                            }
+                                        }
+                                },
+                                onGoogleClicked = {
+                                    val intent = googleSignInClient.signInIntent
+                                    launcher.launch(intent)
+                                },
+                                onLoginClicked = { currentScreen = Screen.Login },
+                                onTermsClicked = {
+                                    previousScreen = currentScreen
+                                    currentScreen = Screen.Terms
+                                },
+                                onPrivacyClicked = {
+                                    previousScreen = currentScreen
+                                    currentScreen = Screen.Privacy
+                                }
+                            )
+                        }
+
+                        is Screen.Login -> Box(Modifier.padding(bottom = innerPadding.calculateBottomPadding())) {
+                            LoginScreen(
+                                onLoginSuccess = { currentScreen = Screen.Home },
+                                onBackToSignUp = { currentScreen = Screen.SignUp },
+                                onGoogleClicked = {
+                                    val intent = googleSignInClient.signInIntent
+                                    launcher.launch(intent)
+                                },
+                                onTermsClicked = {
+                                    previousScreen = currentScreen
+                                    currentScreen = Screen.Terms
+                                },
+                                onPrivacyClicked = {
+                                    previousScreen = currentScreen
+                                    currentScreen = Screen.Privacy
+                                }
+                            )
+                        }
+
+                        is Screen.NameEntry -> Box(Modifier.padding(bottom = innerPadding.calculateBottomPadding())) {
+                            NameEntryScreen(
+                                userId = screen.userId,
+                                userEmail = screen.email,
+                                onNameSubmitted = { currentScreen = Screen.Home }
+                            )
+                        }
+
+                        is Screen.Home -> Box(Modifier.padding(bottom = innerPadding.calculateBottomPadding())) {
+                            InventoryScreen()
+                        }
+
+                        is Screen.Settings -> Box(Modifier.padding(bottom = innerPadding.calculateBottomPadding())) {
+                            Settings(onNavigate = {
+                                previousScreen = currentScreen
+                                currentScreen = it
+                            })
+                        }
+
+                        is Screen.Terms -> Box(Modifier.padding(bottom = innerPadding.calculateBottomPadding())) {
+                            TermsAndConditionsScreen(onBack = {
+                                currentScreen = previousScreen ?: Screen.Settings
+                            })
+                        }
+
+                        is Screen.Privacy -> Box(Modifier.padding(bottom = innerPadding.calculateBottomPadding())) {
+                            PrivacyPolicyScreen(onBack = {
+                                currentScreen = previousScreen ?: Screen.Settings
+                            })
+                        }
+
+                        is Screen.About -> Box(Modifier.padding(bottom = innerPadding.calculateBottomPadding())) {
+                            AboutUsScreen(onBack = {
+                                currentScreen = previousScreen ?: Screen.Settings
+                            })
+                        }
+                        is Screen.Profile -> Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("Edit Profile screen coming soon!", fontSize = 20.sp)
+                        }
+
+                    }
+
+                    toastMessage?.let {
+                        Toast.makeText(context, it, Toast.LENGTH_LONG).show()
+                        toastMessage = null
+                    }
                 }
             }
         }
     }
 }
+
+
+
 
 @Composable
 fun SplashScreenWithDelay(onDone: () -> Unit) {

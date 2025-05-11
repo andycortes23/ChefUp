@@ -30,6 +30,34 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 
+import android.widget.Toast
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.google.firebase.auth.FirebaseAuth
+import com.example.test3.login.fontFamily
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.text.ClickableText
+import androidx.compose.ui.text.*
+import androidx.compose.ui.text.style.TextDecoration
+
+
+
+
 // Font Provider Setup
 val provider = Provider(
     providerAuthority = "com.google.android.gms.fonts",
@@ -45,7 +73,19 @@ val fontFamily = FontFamily(
 )
 
 @Composable
-fun Login() {
+fun LoginScreen(
+    onLoginSuccess: () -> Unit,
+    onBackToSignUp: () -> Unit,
+    onGoogleClicked: () -> Unit,
+    onTermsClicked: () -> Unit,
+    onPrivacyClicked: () -> Unit
+
+) {
+    val context = LocalContext.current
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var error by remember { mutableStateOf<String?>(null) }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -53,23 +93,18 @@ fun Login() {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        // Splash Page Title Text
         Text(
             text = "Chef Up",
-            style = TextStyle(
-                fontSize = 24.sp,
-                lineHeight = 36.sp,
-                fontFamily = fontFamily,
-                fontWeight = FontWeight(600),
-                color = Color(0xFF000000),
-                textAlign = TextAlign.Center,
-            ),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp)
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Bold,
+            fontFamily = fontFamily,
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = TextAlign.Center,
+            color = Color.Black
         )
+
         Spacer(modifier = Modifier.height(16.dp))
-        // Splash Page Image
+
         Box(
             modifier = Modifier
                 .size(107.dp)
@@ -80,223 +115,160 @@ fun Login() {
         ) {
             Image(
                 painter = painterResource(id = R.drawable.image2),
-                contentDescription = "Splash Image",
+                contentDescription = "Logo",
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize()
             )
         }
 
-        Spacer(modifier = Modifier.height(10.dp))
+        Spacer(modifier = Modifier.height(32.dp))
 
-        // Content Section
-        Column(
+        Text("Login to your account", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text("Enter your email to login to this app", fontSize = 14.sp, color = Color.Gray)
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        OutlinedTextField(
+            value = email,
+            onValueChange = { email = it },
+            label = { Text("Email") },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(
+                capitalization = KeyboardCapitalization.None,
+                autoCorrect = false,
+                keyboardType = KeyboardType.Email
+            ),
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        OutlinedTextField(
+            value = password,
+            onValueChange = { password = it },
+            label = { Text("Password") },
+            singleLine = true,
+            visualTransformation = PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        error?.let {
+            Text(it, color = Color.Red, fontSize = 12.sp)
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+
+        Button(
+            onClick = {
+                if (email.isBlank() || password.isBlank()) {
+                    error = "Please enter both email and password"
+                } else {
+                    error = null
+                    FirebaseAuth.getInstance()
+                        .signInWithEmailAndPassword(email, password)
+                        .addOnCompleteListener { task ->
+                            if (task.isSuccessful) {
+                                onLoginSuccess()
+                            } else {
+                                error = task.exception?.message ?: "Login failed"
+                            }
+                        }
+                }
+            },
             modifier = Modifier
-                .width(375.dp)
-                .height(335.dp)
-                .padding(start = 24.dp, end = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp, Alignment.Top),
-            horizontalAlignment = Alignment.CenterHorizontally,
+                .fillMaxWidth()
+                .height(48.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Color.Black)
         ) {
-            // First Text in Content: "Login an account"
-            Text(
-                text = "Login to your account",
-                style = TextStyle(
-                    fontSize = 16.sp,
-                    lineHeight = 24.sp,
-                    fontFamily = fontFamily,
-                    fontWeight = FontWeight(600),
-                    color = Color(0xFF000000),
-                    textAlign = TextAlign.Center,
-                ),
+            Text("Continue", color = Color.White)
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(48.dp)
+                .background(color = Color(0xFFEEEEEE), shape = RoundedCornerShape(8.dp))
+                .padding(horizontal = 16.dp)
+                .clickable { onGoogleClicked() }
+        ) {
+            Image(
+                painter = painterResource(id = R.drawable.google),
+                contentDescription = "Google Logo",
                 modifier = Modifier
-                    .width(131.dp)
-                    .height(24.dp)
+                    .width(20.dp)
+                    .height(20.dp),
+                contentScale = ContentScale.Fit
             )
 
-            // Second Text in Content: "Enter your email to sign up for this app"
             Text(
-                text = "Enter your email to login to this app",
+                text = "Continue with Google",
                 style = TextStyle(
                     fontSize = 14.sp,
-                    lineHeight = 21.sp,
+                    fontWeight = FontWeight.Medium,
                     fontFamily = fontFamily,
-                    fontWeight = FontWeight(400),
-                    color = Color(0xFF000000),
-                    textAlign = TextAlign.Center,
-                ),
-                modifier = Modifier
-                    .width(240.dp)
-                    .height(21.dp)
-            )
-
-            // Input Field for Email
-            Column(
-                modifier = Modifier
-                    .width(327.dp)
-                    .height(96.dp)
-                    .padding(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.Top),
-                horizontalAlignment = Alignment.Start
-            ) {
-                // Input Field
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.Start),
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .border(width = 1.dp, color = Color(0xFFE0E0E0), shape = RoundedCornerShape(size = 8.dp))
-                        .width(327.dp)
-                        .height(40.dp)
-                        .background(color = Color(0xFFFFFFFF), shape = RoundedCornerShape(size = 8.dp))
-                ) {
-                    // Text inside the Input
-                    Text(
-                        text = "email@domain.com",
-                        style = TextStyle(
-                            fontSize = 14.sp,
-                            lineHeight = 19.6.sp,
-                            fontFamily = fontFamily,
-                            fontWeight = FontWeight(400),
-                            color = Color(0xFF828282),
-                        ),
-                        modifier = Modifier
-                            .padding(start = 16.dp)
-                            .width(295.dp)
-                            .height(20.dp)
-                    )
-                }
-
-                // Continue Button
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .width(327.dp)
-                        .height(40.dp)
-                        .background(color = Color(0xFF000000), shape = RoundedCornerShape(size = 8.dp))
-                        .padding(start = 16.dp, end = 16.dp)
-                ) {
-                    // Button Text
-                    Text(
-                        text = "Continue",
-                        style = TextStyle(
-                            fontSize = 14.sp,
-                            lineHeight = 19.6.sp,
-                            fontFamily = fontFamily,
-                            fontWeight = FontWeight(500),
-                            color = Color(0xFFFFFFFF),
-                        )
-                    )
-                }
-            }
-
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 32.dp)
-            ) {
-                // Left line
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(1.dp)
-                        .background(Color(0xFFE6E6E6))
+                    color = Color.Black
                 )
-
-                // "Or" text
-                Text(
-                    text = "or",
-                    style = TextStyle(
-                        fontSize = 14.sp,
-                        lineHeight = 19.6.sp,
-                        fontFamily = fontFamily,
-                        fontWeight = FontWeight(400),
-                        color = Color(0xFF828282),
-                        textAlign = TextAlign.Center
-                    ),
-                    modifier = Modifier.padding(horizontal = 8.dp)
-                )
-
-                // Right line
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(1.dp)
-                        .background(Color(0xFFE6E6E6))
-                )
-            }
-
-            // Continue with Google Button
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .width(327.dp)
-                    .height(40.dp)
-                    .background(color = Color(0xFFEEEEEE), shape = RoundedCornerShape(size = 8.dp))
-                    .padding(start = 82.5.dp, top = 10.dp, end = 81.5.dp, bottom = 10.dp)
-            ) {
-                // Image inside the button
-                Image(
-                    painter = painterResource(id = R.drawable.google),
-                    contentDescription = "Google Logo",
-                    modifier = Modifier
-                        .padding(0.08333.dp)
-                        .width(20.dp)
-                        .height(20.dp),
-                    contentScale = ContentScale.None
-                )
-
-                // Text inside the button
-                Text(
-                    text = "Continue with Google",
-                    style = TextStyle(
-                        fontSize = 14.sp,
-                        lineHeight = 19.6.sp,
-                        fontFamily = fontFamily,
-                        fontWeight = FontWeight(500),
-                        color = Color(0xFF000000),
-                    ),
-                    modifier = Modifier
-                        .width(135.dp)
-                        .height(20.dp)
-                )
-            }
-
-            // Terms of Service Text
-            Text(
-                text = "By clicking continue, you agree to our Terms of Service and Privacy Policy",
-                style = TextStyle(
-                    fontSize = 12.sp,
-                    lineHeight = 18.sp,
-                    fontFamily = fontFamily,
-                    fontWeight = FontWeight(400),
-                    color = Color(0xFF828282),
-                    textAlign = TextAlign.Center,
-                ),
-                modifier = Modifier
-                    .width(327.dp)
-                    .height(36.dp)
             )
         }
 
-        // Login link text
-        Spacer(modifier = Modifier.height(16.dp))
 
-        Text(
-            text = "Click here to Sign Up",
+        Spacer(modifier = Modifier.height(24.dp))
+
+        val annotatedText = buildAnnotatedString {
+            append("By clicking continue, you agree to our ")
+
+            pushStringAnnotation(tag = "terms", annotation = "terms")
+            withStyle(SpanStyle(fontWeight = FontWeight.Bold)) {
+                append("Terms of Service")
+            }
+            pop()
+
+            append(" and ")
+
+            pushStringAnnotation(tag = "privacy", annotation = "privacy")
+            withStyle(SpanStyle(fontWeight = FontWeight.Bold)) {
+                append("Privacy Policy")
+            }
+            pop()
+        }
+
+        ClickableText(
+            text = annotatedText,
             style = TextStyle(
                 fontSize = 12.sp,
-                lineHeight = 18.sp,
-                fontFamily = fontFamily,
-                fontWeight = FontWeight(400),
-                color = Color(0xFF828282),
-                textAlign = TextAlign.Center,
+                color = Color.Gray,
+                textAlign = TextAlign.Center
             ),
             modifier = Modifier
-                .padding(top = 8.dp)
-                .align(Alignment.CenterHorizontally)
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            onClick = { offset ->
+                annotatedText.getStringAnnotations(tag = "terms", start = offset, end = offset)
+                    .firstOrNull()?.let {
+                        onTermsClicked() // 👉 Trigger Terms screen
+                    }
+
+                annotatedText.getStringAnnotations(tag = "privacy", start = offset, end = offset)
+                    .firstOrNull()?.let {
+                        onPrivacyClicked() // 👉 Trigger Privacy screen
+                    }
+            }
         )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        TextButton(onClick = onBackToSignUp) {
+            Text("Click here to Sign Up", color = Color.Black, fontSize = 12.sp)
+        }
     }
 }
+
 

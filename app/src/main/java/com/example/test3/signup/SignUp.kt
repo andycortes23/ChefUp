@@ -29,6 +29,9 @@ import androidx.compose.material3.*
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.ClickableText
+import androidx.compose.ui.text.*
+import androidx.compose.ui.text.style.TextDecoration
 
 
 
@@ -39,7 +42,10 @@ import androidx.compose.foundation.text.KeyboardOptions
 fun SignUp(
     onContinueClicked: (String, String) -> Unit = { _, _ -> },
     onGoogleClicked: () -> Unit = {},
-    onLoginClicked: () -> Unit = {}
+    onLoginClicked: () -> Unit = {},
+    onTermsClicked: () -> Unit,
+    onPrivacyClicked: () -> Unit
+
 ) {
     val context = LocalContext.current
 
@@ -231,12 +237,45 @@ fun SignUp(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Text(
-            text = "By clicking continue, you agree to our Terms of Service and Privacy Policy",
-            fontSize = 12.sp,
-            color = Color.Gray,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(horizontal = 16.dp)
+        val annotatedText = buildAnnotatedString {
+            append("By clicking continue, you agree to our ")
+
+            pushStringAnnotation(tag = "terms", annotation = "terms")
+            withStyle(SpanStyle(fontWeight = FontWeight.Bold)) {
+                append("Terms of Service")
+            }
+            pop()
+
+            append(" and ")
+
+            pushStringAnnotation(tag = "privacy", annotation = "privacy")
+            withStyle(SpanStyle(fontWeight = FontWeight.Bold)) {
+                append("Privacy Policy")
+            }
+            pop()
+        }
+
+        ClickableText(
+            text = annotatedText,
+            style = TextStyle(
+                fontSize = 12.sp,
+                color = Color.Gray,
+                textAlign = TextAlign.Center
+            ),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            onClick = { offset ->
+                annotatedText.getStringAnnotations(tag = "terms", start = offset, end = offset)
+                    .firstOrNull()?.let {
+                        onTermsClicked() // 👉 Trigger Terms screen
+                    }
+
+                annotatedText.getStringAnnotations(tag = "privacy", start = offset, end = offset)
+                    .firstOrNull()?.let {
+                        onPrivacyClicked() // 👉 Trigger Privacy screen
+                    }
+            }
         )
 
         Spacer(modifier = Modifier.height(16.dp))
