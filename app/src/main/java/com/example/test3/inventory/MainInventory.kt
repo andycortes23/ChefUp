@@ -194,23 +194,56 @@ fun StorageSection() {
 @Composable
 fun BottomNavBar(
     currentScreen: Screen,
-    onTabSelected: (Screen) -> Unit
+    onTabSelected: (Screen) -> Unit,
+    onAddIngredient: () -> Unit
 ) {
     BottomNavigation(
         backgroundColor = Color.White,
         contentColor = Color.Black,
-        modifier = Modifier.height(56.dp)
+        modifier = Modifier
+            .height(56.dp)
+            .fillMaxWidth()
     ) {
         BottomNavigationItem(
-            icon = { Icon(Icons.Default.Home, contentDescription = "Home", modifier = Modifier.offset(y = (-4).dp)) },
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.Home,
+                    contentDescription = "Home",
+                    modifier = Modifier.offset(y = (-4).dp)
+                )
+            },
             selected = currentScreen is Screen.Home,
             onClick = { onTabSelected(Screen.Home) }
         )
+
+        // Center plus icon
         BottomNavigationItem(
-            icon = { Icon(Icons.Default.Settings, contentDescription = "Settings", modifier = Modifier.offset(y = (-4).dp)) },
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "Add Ingredient",
+                    modifier = Modifier
+                        .size(36.dp)
+                        .offset(y = (-8).dp),
+
+                )
+            },
+            selected = false, // No highlighting needed
+            onClick = { onAddIngredient() }
+        )
+
+        BottomNavigationItem(
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.Settings,
+                    contentDescription = "Settings",
+                    modifier = Modifier.offset(y = (-4).dp)
+                )
+            },
             selected = currentScreen is Screen.Settings,
             onClick = { onTabSelected(Screen.Settings) }
         )
     }
 }
+
 
