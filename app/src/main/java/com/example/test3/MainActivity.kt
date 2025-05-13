@@ -1,8 +1,8 @@
 package com.example.test3
 
+import android.os.Build
 import android.os.Bundle
 import android.content.Intent
-import android.os.Build
 import android.widget.Toast
 import android.graphics.Color as AndroidColor
 import androidx.activity.ComponentActivity
@@ -41,6 +41,9 @@ import com.example.test3.login.LoginScreen
 import com.google.firebase.firestore.FirebaseFirestore
 import com.example.test3.settings.Settings
 import androidx.compose.material3.Scaffold
+import com.example.test3.inventory.AddIngredientScreen
+import com.example.test3.settings.ChangePasswordScreen
+import com.google.firebase.auth.EmailAuthProvider
 import androidx.core.app.ActivityCompat
 import android.Manifest
 import android.util.Log
@@ -80,13 +83,31 @@ sealed class Screen {
     object Settings : Screen()
     object About : Screen()
     object Profile : Screen()
-
+    object ChangePassword : Screen()
+    object AddIngredients : Screen()
 }
 
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        FirebaseApp.initializeApp(this)
+        Firebase.analytics.logEvent(FirebaseAnalytics.Event.APP_OPEN, null)
+
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                101
+            )
+        }
+        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                val token = task.result
+                Log.d("FCM_TOKEN", "Token: $token")
+            }
+        }
         FirebaseApp.initializeApp(this)
         Firebase.analytics.logEvent(FirebaseAnalytics.Event.APP_OPEN, null)
 
@@ -269,6 +290,43 @@ class MainActivity : ComponentActivity() {
                         ) {
                             Text("Edit Profile screen coming soon!", fontSize = 20.sp)
                         }
+                        is Screen.ChangePassword -> Box(Modifier.padding(bottom = innerPadding.calculateBottomPadding())) {
+                            ChangePasswordScreen(
+                                onBackClicked = {
+                                    currentScreen = Screen.Settings
+                                },
+                                onChangePasswordClicked = { oldPassword, newPassword ->
+                                    val user = FirebaseAuth.getInstance().currentUser
+                                    if (user != null && user.email != null) {
+                                        val credential = EmailAuthProvider.getCredential(user.email!!, oldPassword)
+                                        user.reauthenticate(credential)
+                                            .addOnSuccessListener {
+                                                user.updatePassword(newPassword)
+                                                    .addOnSuccessListener {
+                                                        toastMessage = "Password changed successfully"
+                                                        currentScreen = Screen.Settings
+                                                    }
+                                                    .addOnFailureListener {
+                                                        toastMessage = "Failed to update password: ${it.localizedMessage}"
+                                                    }
+                                            }
+                                            .addOnFailureListener {
+                                                toastMessage = "Old password is incorrect"
+                                            }
+                                    } else {
+                                        toastMessage = "User not logged in"
+                                    }
+                                }
+                            )
+                        }
+                        is Screen.AddIngredients -> Box(Modifier.padding(bottom = innerPadding.calculateBottomPadding())) {
+                            AddIngredientScreen(onAddSuccess = {
+                                currentScreen = Screen.Home
+                            })
+                        }
+
+
+
 
                     }
 

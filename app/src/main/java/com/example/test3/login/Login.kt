@@ -190,6 +190,17 @@ fun LoginScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Divider(color = Color.Gray, modifier = Modifier.weight(1f))
+            Text("  or  ", color = Color.Gray)
+            Divider(color = Color.Gray, modifier = Modifier.weight(1f))
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier

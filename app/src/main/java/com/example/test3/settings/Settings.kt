@@ -133,7 +133,7 @@ fun Settings(
                             onNavigate(Screen.Profile)
                         })
                         SettingsItem(title = "Change password", onClick = {
-                            // Add logic if needed
+                            onNavigate(Screen.ChangePassword)
                         })
                         /*SettingsItem(title = "Push notifications", trailingContent = {
                             Switch(checked = false, onCheckedChange = {})
