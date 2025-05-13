@@ -68,9 +68,17 @@ dependencies {
     implementation("com.google.firebase:firebase-analytics")
     implementation ("com.google.firebase:firebase-auth-ktx:22.1.2")
     implementation ("com.google.firebase:firebase-firestore-ktx:24.11.0")
-    implementation ("com.google.firebase:firebase-auth-ktx:22.1.2")
     implementation ("com.google.android.gms:play-services-auth:21.0.0")
-
-
+    implementation("com.google.firebase:firebase-messaging-ktx")
+    implementation("com.google.firebase:firebase-inappmessaging-display:20.3.5")
+    implementation("com.google.firebase:firebase-analytics")
 }
+
+// ... your plugins, android, dependencies blocks
+
+apply(plugin = "com.google.gms.google-services")
+
+
+
+
 

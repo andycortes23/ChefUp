@@ -2,6 +2,7 @@ package com.example.test3
 
 import android.os.Bundle
 import android.content.Intent
+import android.os.Build
 import android.widget.Toast
 import android.graphics.Color as AndroidColor
 import androidx.activity.ComponentActivity
@@ -40,6 +41,13 @@ import com.example.test3.login.LoginScreen
 import com.google.firebase.firestore.FirebaseFirestore
 import com.example.test3.settings.Settings
 import androidx.compose.material3.Scaffold
+import androidx.core.app.ActivityCompat
+import android.Manifest
+import android.util.Log
+import com.google.firebase.analytics.FirebaseAnalytics
+import com.google.firebase.messaging.FirebaseMessaging
+import com.google.firebase.analytics.ktx.analytics
+import com.google.firebase.ktx.Firebase
 
 
 
@@ -59,6 +67,8 @@ class MainActivity : ComponentActivity() {
 }
 */
 
+
+
 sealed class Screen {
     object Splash : Screen()
     object SignUp : Screen()
@@ -77,6 +87,24 @@ sealed class Screen {
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        FirebaseApp.initializeApp(this)
+        Firebase.analytics.logEvent(FirebaseAnalytics.Event.APP_OPEN, null)
+
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                101
+            )
+        }
+        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                val token = task.result
+                Log.d("FCM_TOKEN", "Token: $token")
+            }
+        }
+
 
         window.statusBarColor = AndroidColor.WHITE
         WindowCompat.setDecorFitsSystemWindows(window, true)
