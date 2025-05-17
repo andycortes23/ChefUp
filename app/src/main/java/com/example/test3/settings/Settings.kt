@@ -30,14 +30,16 @@ import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import androidx.compose.runtime.*
-
+import com.example.test3.components.BottomNavBar
 
 
 @Composable
 fun Settings(
-    onNavigate: (Screen) -> Unit
+    onNavigate: (Screen) -> Unit,
+    currentScreen: Screen,
+    onTabSelected: (Screen) -> Unit,
+    onAddIngredient: () -> Unit
 ) {
-
     val context = LocalContext.current
     var firstName by remember { mutableStateOf("First") }
     var lastName by remember { mutableStateOf("Last") }
@@ -53,35 +55,38 @@ fun Settings(
                     firstName = doc.getString("firstName") ?: "First"
                     lastName = doc.getString("lastName") ?: "Last"
                 }
-                .addOnFailureListener {
-                    // Optionally handle error
-                }
         }
     }
 
-
     val systemUiController = rememberSystemUiController()
-
     SideEffect {
-        systemUiController.setStatusBarColor(
-            color = Color(0xFFD4FF99),
-            darkIcons = true
-        )
+        systemUiController.setStatusBarColor(Color(0xFFD4FF99), darkIcons = true)
     }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.White)
-    ) {
-        Column(modifier = Modifier.fillMaxSize()) {
+    Scaffold(
+        bottomBar = {
+            BottomNavBar(
+                currentScreen = currentScreen,
+                onTabSelected = onTabSelected,
+                onAddIngredient = onAddIngredient
+            )
+        }
+    ) { innerPadding ->
+        val bottomInset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
 
-            // Header
+        Column(
+            modifier = Modifier
+                .padding(innerPadding)
+                .padding(bottom = bottomInset)
+                .fillMaxSize()
+                .background(Color.White)
+        ) {
+
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(Color(0xFFD4FF99))
-                    .statusBarsPadding()
+                    .padding(WindowInsets.statusBars.asPaddingValues())
                     .padding(horizontal = 16.dp, vertical = 16.dp)
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -99,7 +104,9 @@ fun Settings(
                 }
             }
 
-            // Profile card
+            Spacer(modifier = Modifier.height(16.dp))
+
+
             Card(
                 modifier = Modifier
                     .padding(16.dp)
@@ -123,26 +130,18 @@ fun Settings(
                         )
                         Spacer(modifier = Modifier.width(12.dp))
                         Text("$firstName $lastName", fontSize = 18.sp, fontWeight = FontWeight.Medium)
-
                     }
 
                     Divider()
 
                     SettingsSection(title = "Account Settings") {
-                        SettingsItem(title = "Edit profile", onClick = {
-                            onNavigate(Screen.Profile)
-                        })
-                        SettingsItem(title = "Change password", onClick = {
-                            onNavigate(Screen.ChangePassword)
-                        })
-                        /*SettingsItem(title = "Push notifications", trailingContent = {
-                            Switch(checked = false, onCheckedChange = {})
-                        })*/
+                        SettingsItem(title = "Edit profile", onClick = { onNavigate(Screen.Profile) })
+                        SettingsItem(title = "Change password", onClick = { onNavigate(Screen.ChangePassword) })
                     }
                 }
             }
 
-            // More Section
+
             Card(
                 modifier = Modifier
                     .padding(horizontal = 16.dp)
@@ -151,24 +150,19 @@ fun Settings(
                 elevation = 4.dp
             ) {
                 Column {
-                    SettingsSection(title = "More") {
-                        SettingsItem(title = "About us", onClick = {
-                            onNavigate(Screen.About)
-                        })
-                        SettingsItem(title = "Privacy policy", onClick = {
-                            onNavigate(Screen.Privacy)
-                        })
-                        SettingsItem(title = "Terms and conditions", onClick = {
-                            onNavigate(Screen.Terms)
-                        })
+                    SettingsSection("More") {
+                        SettingsItem(title = "About us", onClick = { onNavigate(Screen.About) })
+                        SettingsItem(title = "Privacy policy", onClick = { onNavigate(Screen.Privacy) })
+                        SettingsItem(title = "Terms and conditions", onClick = { onNavigate(Screen.Terms) })
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.height(32.dp))
         }
     }
 }
+
 
 @Composable
 fun SettingsItem(

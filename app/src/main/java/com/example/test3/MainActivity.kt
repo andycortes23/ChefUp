@@ -34,14 +34,12 @@ import com.example.test3.settings.PrivacyPolicyScreen
 import com.example.test3.settings.TermsAndConditionsScreen
 import com.example.test3.signup.NameEntryScreen
 import androidx.compose.ui.unit.sp
-import com.example.test3.inventory.BottomNavBar
 import com.example.test3.signup.NameEntryScreen
 import com.example.test3.inventory.InventoryScreen
 import com.example.test3.login.LoginScreen
 import com.google.firebase.firestore.FirebaseFirestore
 import com.example.test3.settings.Settings
 import androidx.compose.material3.Scaffold
-import com.example.test3.inventory.AddIngredientScreen
 import com.example.test3.settings.ChangePasswordScreen
 import com.google.firebase.auth.EmailAuthProvider
 import androidx.core.app.ActivityCompat
@@ -51,7 +49,10 @@ import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.messaging.FirebaseMessaging
 import com.google.firebase.analytics.ktx.analytics
 import com.google.firebase.ktx.Firebase
-
+import com.example.test3.components.BottomNavBar
+import com.example.test3.inventory.AddIngredientScreen
+import com.example.test3.inventory.IngredientListByCategoryScreen
+import com.example.test3.inventory.IngredientListScreen
 
 
 /*
@@ -85,6 +86,10 @@ sealed class Screen {
     object Profile : Screen()
     object ChangePassword : Screen()
     object AddIngredients : Screen()
+
+    data class IngredientList(val storage: String) : Screen()
+    data class CategoryList(val category: String) : Screen()
+
 }
 
 
@@ -188,14 +193,15 @@ class MainActivity : ComponentActivity() {
                     if (currentScreen is Screen.Home || currentScreen is Screen.Settings) {
                         BottomNavBar(
                             currentScreen = currentScreen,
-                            onTabSelected = { selected -> currentScreen = selected }
+                            onTabSelected = { selected -> currentScreen = selected },
+                            onAddIngredient = { currentScreen = Screen.AddIngredients }
                         )
                     }
                 }
             ) { innerPadding ->
                 Crossfade(targetState = currentScreen, animationSpec = tween(500)) { screen ->
                     when (screen) {
-                        is Screen.Splash -> SplashScreenWithDelay { currentScreen = Screen.SignUp }
+                        is Screen.Splash -> SplashScreenWithDelay { currentScreen = Screen.Login }
 
                         is Screen.SignUp -> Box(Modifier.padding(bottom = innerPadding.calculateBottomPadding())) {
                             SignUp(
@@ -256,16 +262,23 @@ class MainActivity : ComponentActivity() {
                             )
                         }
 
-                        is Screen.Home -> Box(Modifier.padding(bottom = innerPadding.calculateBottomPadding())) {
-                            InventoryScreen()
-                        }
+                        is Screen.Home -> InventoryScreen(
+                            currentScreen = currentScreen,
+                            onTabSelected = { selected -> currentScreen = selected },
+                            onAddIngredient = { currentScreen = Screen.AddIngredients },
+                            onStorageSelected = { storage -> currentScreen = Screen.IngredientList(storage) },
+                            onCategorySelected = { category -> currentScreen = Screen.CategoryList(category) }
+                        )
 
-                        is Screen.Settings -> Box(Modifier.padding(bottom = innerPadding.calculateBottomPadding())) {
-                            Settings(onNavigate = {
-                                previousScreen = currentScreen
-                                currentScreen = it
-                            })
-                        }
+
+
+                        is Screen.Settings -> Settings(
+                            onNavigate = { screen -> currentScreen = screen },
+                            currentScreen = currentScreen,
+                            onTabSelected = { selected -> currentScreen = selected },
+                            onAddIngredient = { currentScreen = Screen.AddIngredients }
+                        )
+
 
                         is Screen.Terms -> Box(Modifier.padding(bottom = innerPadding.calculateBottomPadding())) {
                             TermsAndConditionsScreen(onBack = {
@@ -319,11 +332,22 @@ class MainActivity : ComponentActivity() {
                                 }
                             )
                         }
-                        is Screen.AddIngredients -> Box(Modifier.padding(bottom = innerPadding.calculateBottomPadding())) {
-                            AddIngredientScreen(onAddSuccess = {
-                                currentScreen = Screen.Home
-                            })
-                        }
+                        is Screen.AddIngredients -> AddIngredientScreen(
+                            onAddSuccess = { currentScreen = Screen.Home },
+                            currentScreen = currentScreen,
+                            onTabSelected = { selected -> currentScreen = selected }
+                        )
+                        is Screen.IngredientList -> IngredientListScreen(
+                            storageFilter = screen.storage,
+                            onBack = { currentScreen = Screen.Home }
+                        )
+                        is Screen.CategoryList -> IngredientListByCategoryScreen(
+                            category = screen.category,
+                            onBack = { currentScreen = Screen.Home }
+                        )
+
+
+
 
 
 
@@ -339,9 +363,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
-
-
-
 
 @Composable
 fun SplashScreenWithDelay(onDone: () -> Unit) {
