@@ -265,12 +265,5 @@ fun StorageSection(
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        Row(
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text("Add Storage Unit", fontWeight = FontWeight.Bold, fontSize = 20.sp)
-            Spacer(modifier = Modifier.width(8.dp))
-            Icon(Icons.Default.AddCircle, contentDescription = "Add")
-        }
     }
 }

@@ -82,6 +82,10 @@ dependencies {
     implementation ("com.google.firebase:firebase-inappmessaging-display:20.3.5")
     implementation ("com.google.firebase:firebase-analytics")
     implementation ("com.google.firebase:firebase-messaging:23.4.1")
+    implementation("io.coil-kt:coil-compose:2.4.0")
+    implementation("com.google.firebase:firebase-storage-ktx:20.3.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.6.4")
+    implementation("androidx.datastore:datastore-preferences:1.0.0")
 
 }
 

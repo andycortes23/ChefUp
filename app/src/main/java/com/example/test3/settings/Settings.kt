@@ -1,5 +1,6 @@
 package com.example.test3.settings
 
+import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -10,11 +11,8 @@ import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.SideEffect
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -24,37 +22,46 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.rememberAsyncImagePainter
 import com.example.test3.R
 import com.example.test3.Screen
+import com.example.test3.components.BottomNavBar
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-import androidx.compose.runtime.*
-import com.example.test3.components.BottomNavBar
-
+import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.launch
 
 @Composable
 fun Settings(
     onNavigate: (Screen) -> Unit,
     currentScreen: Screen,
     onTabSelected: (Screen) -> Unit,
-    onAddIngredient: () -> Unit
+    onAddIngredient: () -> Unit,
+    onSignOut: () -> Unit
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val uid = FirebaseAuth.getInstance().currentUser?.uid
+
     var firstName by remember { mutableStateOf("First") }
     var lastName by remember { mutableStateOf("Last") }
 
-    LaunchedEffect(Unit) {
-        val uid = FirebaseAuth.getInstance().currentUser?.uid
+    val userId = FirebaseAuth.getInstance().currentUser?.uid
+    val savedImageUri by ProfileImageStore.getProfileImageUri(context, userId ?: "").collectAsState(initial = null)
+
+
+    // Load user name from Firestore
+    LaunchedEffect(uid) {
         if (uid != null) {
-            FirebaseFirestore.getInstance()
+            val doc = FirebaseFirestore.getInstance()
                 .collection("users")
                 .document(uid)
                 .get()
-                .addOnSuccessListener { doc ->
-                    firstName = doc.getString("firstName") ?: "First"
-                    lastName = doc.getString("lastName") ?: "Last"
-                }
+                .await()
+
+            firstName = doc.getString("firstName") ?: "First"
+            lastName = doc.getString("lastName") ?: "Last"
         }
     }
 
@@ -81,7 +88,6 @@ fun Settings(
                 .fillMaxSize()
                 .background(Color.White)
         ) {
-
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -106,7 +112,6 @@ fun Settings(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-
             Card(
                 modifier = Modifier
                     .padding(16.dp)
@@ -121,13 +126,18 @@ fun Settings(
                             .padding(16.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+                        val savedImageUri by ProfileImageStore.getProfileImageUri(context, userId ?: "").collectAsState(initial = null)
+
                         Image(
-                            painter = painterResource(id = R.drawable.profile_placeholder),
+                            painter = savedImageUri?.let { rememberAsyncImagePainter(Uri.parse(it)) }
+                                ?: painterResource(id = R.drawable.profile_placeholder),
                             contentDescription = "Profile image",
                             modifier = Modifier
-                                .size(48.dp)
+                                .size(64.dp)
                                 .clip(CircleShape)
                         )
+
+
                         Spacer(modifier = Modifier.width(12.dp))
                         Text("$firstName $lastName", fontSize = 18.sp, fontWeight = FontWeight.Medium)
                     }
@@ -140,7 +150,6 @@ fun Settings(
                     }
                 }
             }
-
 
             Card(
                 modifier = Modifier
@@ -156,6 +165,42 @@ fun Settings(
                         SettingsItem(title = "Terms and conditions", onClick = { onNavigate(Screen.Terms) })
                     }
                 }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            var showSignOutDialog by remember { mutableStateOf(false) }
+
+            if (showSignOutDialog) {
+                AlertDialog(
+                    onDismissRequest = { showSignOutDialog = false },
+                    title = { Text("Confirm Sign Out") },
+                    text = { Text("Are you sure you want to sign out?") },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            FirebaseAuth.getInstance().signOut()
+                            onSignOut()
+                        }) {
+                            Text("Yes")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showSignOutDialog = false }) {
+                            Text("Cancel")
+                        }
+                    }
+                )
+            }
+
+            Button(
+                onClick = { showSignOutDialog = true },
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .padding(horizontal = 16.dp)
+                    .fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(backgroundColor = Color(0xFFFF6B6B))
+            ) {
+                Text("Sign Out", color = Color.White)
             }
 
             Spacer(modifier = Modifier.height(32.dp))

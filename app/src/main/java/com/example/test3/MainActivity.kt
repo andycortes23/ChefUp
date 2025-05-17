@@ -53,6 +53,7 @@ import com.example.test3.components.BottomNavBar
 import com.example.test3.inventory.AddIngredientScreen
 import com.example.test3.inventory.IngredientListByCategoryScreen
 import com.example.test3.inventory.IngredientListScreen
+import com.example.test3.settings.EditProfileScreen
 
 
 /*
@@ -65,7 +66,7 @@ class MainActivity : ComponentActivity() {
         WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = false
 
         setContent {
-            AboutUsScreen() //Change this to the screen you would like to displau and comment out the bottom code
+            AboutUsScreen() //Change this to the screen you would like to display and comment out the bottom code
         }
     }
 }
@@ -86,6 +87,7 @@ sealed class Screen {
     object Profile : Screen()
     object ChangePassword : Screen()
     object AddIngredients : Screen()
+
 
     data class IngredientList(val storage: String) : Screen()
     data class CategoryList(val category: String) : Screen()
@@ -113,8 +115,6 @@ class MainActivity : ComponentActivity() {
                 Log.d("FCM_TOKEN", "Token: $token")
             }
         }
-        FirebaseApp.initializeApp(this)
-        Firebase.analytics.logEvent(FirebaseAnalytics.Event.APP_OPEN, null)
 
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -201,7 +201,15 @@ class MainActivity : ComponentActivity() {
             ) { innerPadding ->
                 Crossfade(targetState = currentScreen, animationSpec = tween(500)) { screen ->
                     when (screen) {
-                        is Screen.Splash -> SplashScreenWithDelay { currentScreen = Screen.Login }
+                        is Screen.Splash -> SplashScreenWithDelay {
+                            val user = FirebaseAuth.getInstance().currentUser
+                            if (user != null) {
+                                currentScreen = Screen.Home
+                            } else {
+                                currentScreen = Screen.Login
+                            }
+                        }
+
 
                         is Screen.SignUp -> Box(Modifier.padding(bottom = innerPadding.calculateBottomPadding())) {
                             SignUp(
@@ -276,7 +284,8 @@ class MainActivity : ComponentActivity() {
                             onNavigate = { screen -> currentScreen = screen },
                             currentScreen = currentScreen,
                             onTabSelected = { selected -> currentScreen = selected },
-                            onAddIngredient = { currentScreen = Screen.AddIngredients }
+                            onAddIngredient = { currentScreen = Screen.AddIngredients },
+                            onSignOut = { currentScreen = Screen.Login}
                         )
 
 
@@ -297,12 +306,10 @@ class MainActivity : ComponentActivity() {
                                 currentScreen = previousScreen ?: Screen.Settings
                             })
                         }
-                        is Screen.Profile -> Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text("Edit Profile screen coming soon!", fontSize = 20.sp)
-                        }
+                        is Screen.Profile -> EditProfileScreen(
+                            onBackClicked = { currentScreen = Screen.Settings },
+                            onSaveSuccess = { currentScreen = Screen.Settings }
+                        )
                         is Screen.ChangePassword -> Box(Modifier.padding(bottom = innerPadding.calculateBottomPadding())) {
                             ChangePasswordScreen(
                                 onBackClicked = {

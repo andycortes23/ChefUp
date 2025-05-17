@@ -57,12 +57,10 @@ import androidx.compose.ui.text.style.TextDecoration
 
 
 
-
-// Font Provider Setup
 val provider = Provider(
     providerAuthority = "com.google.android.gms.fonts",
     providerPackage = "com.google.android.gms",
-    certificates = R.array.com_google_android_gms_fonts_certs // Using certificates defined in fonts_certs.xml
+    certificates = R.array.com_google_android_gms_fonts_certs
 )
 
 val robotoFont = GoogleFont("Roboto")
@@ -264,12 +262,12 @@ fun LoginScreen(
             onClick = { offset ->
                 annotatedText.getStringAnnotations(tag = "terms", start = offset, end = offset)
                     .firstOrNull()?.let {
-                        onTermsClicked() // 👉 Trigger Terms screen
+                        onTermsClicked()
                     }
 
                 annotatedText.getStringAnnotations(tag = "privacy", start = offset, end = offset)
                     .firstOrNull()?.let {
-                        onPrivacyClicked() // 👉 Trigger Privacy screen
+                        onPrivacyClicked()
                     }
             }
         )
