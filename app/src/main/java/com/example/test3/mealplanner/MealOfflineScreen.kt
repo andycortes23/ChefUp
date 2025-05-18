@@ -1,11 +1,11 @@
 package com.example.test3.mealplanner
 
+import android.widget.Toast
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material.icons.filled.Delete
 
-import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
@@ -54,26 +54,35 @@ fun MealOfflineScreen(onRecipeSelected: (Recipe) -> Unit, onBack: () -> Unit) {
                 .padding(16.dp)
             ) {
                 savedRecipes.value.forEach { recipe ->
-                    RecipeCard(recipe = recipe) {
-                        onRecipeSelected(recipe)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 6.dp)
+                            .clickable { onRecipeSelected(recipe) },
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(8.dp)
+                        ) {
+                            Text(recipe.title, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                            Text(recipe.description, modifier = Modifier.padding(top = 4.dp))
+                        }
+                        IconButton(onClick = {
+                            val removed = SavedRecipeManager.removeRecipe(context, recipe)
+                            if (removed) {
+                                savedRecipes.value = SavedRecipeManager.getSavedRecipes(context)
+                                Toast.makeText(context, "Recipe removed", Toast.LENGTH_SHORT).show()
+                            } else {
+                                Toast.makeText(context, "Failed to remove recipe", Toast.LENGTH_SHORT).show()
+                            }
+                        }) {
+                            Icon(Icons.Default.Delete, contentDescription = "Delete")
+                        }
                     }
                 }
             }
-        }
-    }
-}
-@Composable
-fun RecipeCard(recipe: Recipe, onClick: () -> Unit) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 6.dp)
-            .clickable { onClick() },
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(recipe.title, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-            Text(recipe.description, modifier = Modifier.padding(top = 4.dp))
         }
     }
 }

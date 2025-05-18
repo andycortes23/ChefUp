@@ -1,12 +1,10 @@
 package com.example.test3.mealplanner
 
 import android.content.Context
-import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 
@@ -50,9 +48,20 @@ object SavedRecipeManager {
         }
     }
 
-    fun clearAll(context: Context) {
-        runBlocking {
-            context.dataStore.edit { it.remove(key) }
+    fun removeRecipe(context: Context, recipe: Recipe): Boolean {
+        return try {
+            runBlocking {
+                val current = context.dataStore.data.first()[key] ?: emptySet()
+                val jsonToRemove = gson.toJson(recipe)
+                val newSet = current.toMutableSet().apply { remove(jsonToRemove) }
+                context.dataStore.edit { prefs ->
+                    prefs[key] = newSet
+                }
+            }
+            true
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
         }
     }
 }
