@@ -1,5 +1,7 @@
 package com.example.test3
 
+import com.example.test3.mealplanner.Recipe
+
 import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
@@ -52,6 +54,8 @@ import com.example.test3.settings.ChangePasswordScreen
 import com.example.test3.inventory.IngredientListScreen
 import com.example.test3.inventory.IngredientListByCategoryScreen
 import com.example.test3.settings.EditProfileScreen
+import com.example.test3.mealplanner.MealDetailScreen
+import com.example.test3.mealplanner.MealOfflineScreen
 
 
 /*
@@ -85,11 +89,11 @@ sealed class Screen {
     object MealPlanGen : Screen()
     object ChangePassword : Screen()
     object StoreFinder : Screen()
-
+    object MealOffline : Screen()
+    data class MealDetail(val recipe: Recipe) : Screen()
 
     data class StorageDetail(val storage: String) : Screen()
     data class CategoryDetail(val category: String) : Screen()
-
 }
 
 class MainActivity : ComponentActivity() {
@@ -335,8 +339,26 @@ class MainActivity : ComponentActivity() {
                         }
                         is Screen.MealPlanGen -> Box(Modifier.padding(bottom = innerPadding.calculateBottomPadding())) {
                             MealPlanGenScreen(
-                                onRecipeSelected = { },
-                                onOfflineClick = {  }
+                                onRecipeSelected = { recipe ->
+                                    currentScreen = Screen.MealDetail(recipe)
+                                },
+                                onOfflineClick = {
+                                    currentScreen = Screen.MealOffline
+                                }
+                            )
+                        }
+                        is Screen.MealOffline -> Box(Modifier.padding(bottom = innerPadding.calculateBottomPadding())) {
+                            MealOfflineScreen(
+                                onRecipeSelected = { recipe ->
+                                    currentScreen = Screen.MealDetail(recipe)
+                                },
+                                onBack = { currentScreen = Screen.MealPlanGen }
+                            )
+                        }
+                        is Screen.MealDetail -> Box(Modifier.padding(bottom = innerPadding.calculateBottomPadding())) {
+                            MealDetailScreen(
+                                recipe = screen.recipe,
+                                onBack = { currentScreen = Screen.MealPlanGen }
                             )
                         }
                         is Screen.ChangePassword -> Box(Modifier.padding(bottom = innerPadding.calculateBottomPadding())) {
