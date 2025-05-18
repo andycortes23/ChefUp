@@ -20,7 +20,8 @@ import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import androidx.compose.material.icons.filled.Delete
-
+import com.google.firebase.firestore.DocumentSnapshot
+import kotlinx.coroutines.tasks.await
 
 @Composable
 fun GreenHeaderBar(
@@ -73,12 +74,26 @@ fun IngredientListScreen(
             .collection("ingredients")
             .get()
             .addOnSuccessListener { snapshot ->
-                val filtered = snapshot.documents.mapNotNull { doc ->
-                    doc.toObject(StoredIngredient::class.java)?.copy(id = doc.id)
-                }
+                val filtered = snapshot.documents
+                    .mapNotNull { doc ->
+                        val name = doc.getString("name") ?: return@mapNotNull null
+                        val quantity = doc.getString("quantity") ?: doc.getLong("quantity")?.toString() ?: "1"
+                        val storage = doc.getString("storage") ?: ""
+                        val expirationDate = doc.getString("expirationDate") ?: ""
+                        val category = doc.getString("category") ?: ""
+
+                        StoredIngredient(
+                            id = doc.id,
+                            name = name,
+                            quantity = quantity,
+                            storage = storage,
+                            expirationDate = expirationDate,
+                            category = category
+                        )
+                    }
                     .filter {
-                    storageFilter == "All Storage" || it.storage.equals(storageFilter, ignoreCase = true)
-                }
+                        storageFilter == "All Storage" || it.storage.equals(storageFilter, ignoreCase = true)
+                    }
 
                 ingredients.clear()
                 ingredients.addAll(filtered)
@@ -88,7 +103,7 @@ fun IngredientListScreen(
     Scaffold(
         contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { innerPadding ->
-    Column(
+        Column(
             modifier = Modifier
                 .padding(innerPadding)
                 .fillMaxSize()
@@ -111,12 +126,11 @@ fun IngredientListScreen(
                     ingredients.forEach { ingredient ->
                         IngredientCard(
                             ingredient = ingredient,
-                            onDelete = { toDelete ->
-                                deleteIngredientFromFirestore(toDelete) { updatedQuantity ->
+                            onDelete = { toDelete, amount ->
+                                deleteIngredientFromFirestore(toDelete, amount) { updatedQuantity ->
                                     if (updatedQuantity <= 0) {
                                         ingredients.remove(toDelete)
                                     } else {
-                                        // Update the quantity in the local list
                                         val index = ingredients.indexOfFirst { it.id == toDelete.id }
                                         if (index != -1) {
                                             ingredients[index] = toDelete.copy(quantity = updatedQuantity.toString())
@@ -124,15 +138,14 @@ fun IngredientListScreen(
                                     }
                                 }
                             }
-
                         )
-
                     }
                 }
             }
         }
     }
 }
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -142,6 +155,9 @@ fun IngredientListByCategoryScreen(
 ) {
     val ingredients = remember { mutableStateListOf<StoredIngredient>() }
     val isLoading = remember { mutableStateOf(true) }
+
+
+
 
 
     LaunchedEffect(category) {
@@ -200,12 +216,11 @@ fun IngredientListByCategoryScreen(
                         ingredients.forEach { ingredient ->
                             IngredientCard(
                                 ingredient = ingredient,
-                                onDelete = { toDelete ->
-                                    deleteIngredientFromFirestore(toDelete) { updatedQuantity ->
+                                onDelete = { toDelete, amount ->
+                                    deleteIngredientFromFirestore(toDelete, amount) { updatedQuantity ->
                                         if (updatedQuantity <= 0) {
                                             ingredients.remove(toDelete)
                                         } else {
-                                            // Update the quantity in the local list
                                             val index = ingredients.indexOfFirst { it.id == toDelete.id }
                                             if (index != -1) {
                                                 ingredients[index] = toDelete.copy(quantity = updatedQuantity.toString())
@@ -213,7 +228,6 @@ fun IngredientListByCategoryScreen(
                                         }
                                     }
                                 }
-
                             )
                         }
                     }
@@ -228,9 +242,10 @@ fun IngredientListByCategoryScreen(
 @Composable
 fun IngredientCard(
     ingredient: StoredIngredient,
-    onDelete: (StoredIngredient) -> Unit
+    onDelete: (StoredIngredient, Int) -> Unit
 ) {
     var showDialog by remember { mutableStateOf(false) }
+    var deleteAmount by remember { mutableStateOf("1") }
 
     if (showDialog) {
         AlertDialog(
@@ -238,8 +253,9 @@ fun IngredientCard(
             confirmButton = {
                 TextButton(
                     onClick = {
+                        val amount = deleteAmount.toIntOrNull()?.coerceAtLeast(1) ?: 1
                         showDialog = false
-                        onDelete(ingredient)
+                        onDelete(ingredient, amount)
                     }
                 ) {
                     Text("Delete", color = Color.Red)
@@ -250,8 +266,23 @@ fun IngredientCard(
                     Text("Cancel")
                 }
             },
-            title = { Text("Delete Ingredient?") },
-            text = { Text("Are you sure you want to delete ${ingredient.name}?") }
+            title = { Text("Delete Ingredient") },
+            text = {
+                if ((ingredient.quantity.toIntOrNull() ?: 1) > 1) {
+                    Column {
+                        Text("How many '${ingredient.name}' do you want to delete?")
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedTextField(
+                            value = deleteAmount,
+                            onValueChange = { deleteAmount = it },
+                            label = { Text("Amount to delete") },
+                            singleLine = true
+                        )
+                    }
+                } else {
+                    Text("Are you sure you want to delete ${ingredient.name}?")
+                }
+            }
         )
     }
 
@@ -287,8 +318,10 @@ fun IngredientCard(
 
 
 
+
 fun deleteIngredientFromFirestore(
     ingredient: StoredIngredient,
+    amountToDelete: Int,
     onResult: (Int) -> Unit // Return updated quantity
 ) {
     val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
@@ -301,12 +334,12 @@ fun deleteIngredientFromFirestore(
     docRef.get().addOnSuccessListener { snapshot ->
         val currentQuantity = snapshot.getString("quantity")?.toIntOrNull() ?: 1
 
-        if (currentQuantity <= 1) {
+        if (currentQuantity <= amountToDelete) {
             docRef.delete().addOnSuccessListener {
                 onResult(0)
             }
         } else {
-            val newQuantity = currentQuantity - 1
+            val newQuantity = currentQuantity - amountToDelete
             docRef.update("quantity", newQuantity.toString())
                 .addOnSuccessListener {
                     onResult(newQuantity)
@@ -314,5 +347,6 @@ fun deleteIngredientFromFirestore(
         }
     }
 }
+
 
 

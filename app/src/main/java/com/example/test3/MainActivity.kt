@@ -32,6 +32,25 @@ import com.example.test3.login.LoginScreen
 import com.google.firebase.firestore.FirebaseFirestore
 import com.example.test3.settings.Settings
 import androidx.compose.material3.Scaffold
+import com.google.firebase.analytics.FirebaseAnalytics
+import com.google.firebase.ktx.Firebase
+import com.google.firebase.remoteconfig.FirebaseRemoteConfig
+import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings
+import android.Manifest
+import androidx.core.app.ActivityCompat
+import com.google.firebase.messaging.FirebaseMessaging
+import com.google.android.libraries.places.api.Places
+import com.google.firebase.analytics.ktx.analytics
+import android.util.Log
+import com.example.test3.components.BottomNavBar
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.unit.sp
+import androidx.compose.material3.Text
+import com.example.test3.inventory.AddIngredientScreen
+import com.example.test3.mealplanner.MealPlanGenScreen
+import com.example.test3.settings.ChangePasswordScreen
+import com.example.test3.inventory.IngredientListScreen
+import com.example.test3.inventory.IngredientListByCategoryScreen
 
 
 
@@ -62,6 +81,12 @@ sealed class Screen {
     object Settings : Screen()
     object About : Screen()
     object Profile : Screen()
+    object AddIngredients : Screen()
+    object MealPlanGen : Screen()
+    object ChangePassword : Screen()
+
+    data class StorageDetail(val storage: String) : Screen()
+    data class CategoryDetail(val category: String) : Screen()
 
 }
 
@@ -251,8 +276,20 @@ class MainActivity : ComponentActivity() {
                         }
 
                         is Screen.Home -> Box(Modifier.padding(bottom = innerPadding.calculateBottomPadding())) {
-                            InventoryScreen()
+                            InventoryScreen(
+                                currentScreen = currentScreen,
+                                onTabSelected = { selected -> currentScreen = selected },
+                                onAddIngredient = { currentScreen = Screen.AddIngredients },
+                                onStorageClick = { selectedStorage ->
+                                    currentScreen = Screen.StorageDetail(selectedStorage)
+                                },
+                                onCategoryClick = { selectedCategory ->
+                                    currentScreen = Screen.CategoryDetail(selectedCategory)
+                                }
+                            )
                         }
+
+
 
 
                         is Screen.Settings -> Settings(
@@ -287,6 +324,36 @@ class MainActivity : ComponentActivity() {
                         ) {
                             Text("Edit Profile screen coming soon!", fontSize = 20.sp)
                         }
+                        is Screen.AddIngredients -> Box(Modifier.padding(bottom = innerPadding.calculateBottomPadding())) {
+                            AddIngredientScreen(
+                                onAddSuccess = { currentScreen = Screen.Home },
+                                currentScreen = currentScreen,
+                                onTabSelected = { selected -> currentScreen = selected }
+                            )
+                        }
+                        is Screen.MealPlanGen -> Box(Modifier.padding(bottom = innerPadding.calculateBottomPadding())) {
+                            MealPlanGenScreen(
+                                onRecipeSelected = { },
+                                onOfflineClick = {  }
+                            )
+                        }
+                        is Screen.ChangePassword -> Box(Modifier.padding(bottom = innerPadding.calculateBottomPadding())) {
+                            ChangePasswordScreen(
+                                onBackClicked = { currentScreen = Screen.Settings },
+                                onChangePasswordClicked = { oldPass, newPass ->
+                                }
+                            )
+                        }
+                        is Screen.StorageDetail -> IngredientListScreen(
+                            storageFilter = screen.storage,
+                            onBack = { currentScreen = Screen.Home }
+                        )
+
+                        is Screen.CategoryDetail -> IngredientListByCategoryScreen(
+                            category = screen.category,
+                            onBack = { currentScreen = Screen.Home }
+                        )
+
 
                     }
 

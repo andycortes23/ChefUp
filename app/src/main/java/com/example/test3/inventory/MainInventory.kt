@@ -4,32 +4,27 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.test3.R
 import com.example.test3.Screen
-import com.example.test3.components.BottomNavBar
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.text.input.ImeAction
-
 
 data class StoredIngredient(
     val id: String = "",
@@ -41,44 +36,57 @@ data class StoredIngredient(
 )
 
 @Composable
-fun InventoryScreen() {
+fun InventoryScreen(
+    currentScreen: Screen,
+    onTabSelected: (Screen) -> Unit,
+    onAddIngredient: () -> Unit,
+    onStorageClick: (String) -> Unit,
+    onCategoryClick: (String) -> Unit
+) {
     val systemUiController = rememberSystemUiController()
     var searchQuery by remember { mutableStateOf("") }
     val searchResults = remember { mutableStateListOf<StoredIngredient>() }
     val userId = FirebaseAuth.getInstance().currentUser?.uid
-
 
     SideEffect {
         systemUiController.setStatusBarColor(Color(0xFFD4FF99), darkIcons = true)
     }
 
     Scaffold(
-        contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        bottomBar = {
-            BottomNavBar(
-                currentScreen = currentScreen,
-                onTabSelected = onTabSelected,
-                onAddIngredient = onAddIngredient
-            )
-        }
+        contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { innerPadding ->
-
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFFD4FF99))
-    ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(top = 32.dp)
-                .background(Color.White)
+                .padding(innerPadding)
         ) {
-            TopSection()
-            CategorySection()
-            Spacer(modifier = Modifier.height(16.dp))
-            StorageSection()
-            Spacer(modifier = Modifier.weight(1f))
+            // Green top section
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color(0xFFD4FF99))
+            ) {
+                Column {
+                    Spacer(modifier = Modifier.height(32.dp))
+                    TopSection(
+                        searchQuery = searchQuery,
+                        onSearchChange = { searchQuery = it }
+                    )
+                    CategorySection(onCategorySelected = onCategoryClick)
+                }
+            }
+
+            // White bottom section
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color.White)
+                    .padding(top = 16.dp)
+            ) {
+                StorageSection(onStorageSelected = onStorageClick)
+
+                Spacer(modifier = Modifier.height(32.dp))
+            }
         }
     }
 }
@@ -110,10 +118,8 @@ fun TopSection(
                 containerColor = Color.White
             )
         )
-
     }
 }
-
 
 @Composable
 fun CategorySection(
@@ -171,7 +177,6 @@ fun CategorySection(
     }
 }
 
-
 @Composable
 fun StorageSection(
     onStorageSelected: (String) -> Unit
@@ -196,6 +201,5 @@ fun StorageSection(
         }
 
         Spacer(modifier = Modifier.height(20.dp))
-
     }
 }

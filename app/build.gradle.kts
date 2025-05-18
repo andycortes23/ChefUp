@@ -64,12 +64,26 @@ dependencies {
     implementation("androidx.compose.material:material")
     implementation("androidx.compose.material:material-icons-extended")
     implementation (libs.google.accompanist.systemuicontroller)
-    implementation(platform("com.google.firebase:firebase-bom:33.13.0"))
-    implementation("com.google.firebase:firebase-analytics")
+    implementation (platform("com.google.firebase:firebase-bom:33.13.0"))
+    implementation ("com.google.firebase:firebase-analytics")
     implementation ("com.google.firebase:firebase-auth-ktx:22.1.2")
     implementation ("com.google.firebase:firebase-firestore-ktx:24.11.0")
     implementation ("com.google.firebase:firebase-auth-ktx:22.1.2")
     implementation ("com.google.android.gms:play-services-auth:21.0.0")
+    implementation ("com.google.firebase:firebase-analytics-ktx")
+    implementation ("com.google.firebase:firebase-config-ktx")
+    implementation ("com.google.android.libraries.places:places:3.3.0")
+    implementation ("com.google.firebase:firebase-messaging-ktx")
+    implementation ("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation ("androidx.datastore:datastore-preferences:1.0.0")
+    implementation ("com.google.code.gson:gson:2.10.1")
+    implementation ("io.coil-kt:coil-compose:2.4.0")
+
+
+
+
+
+
 
 
 }
