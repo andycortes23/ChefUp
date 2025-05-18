@@ -65,7 +65,17 @@ fun SignUp(
     ) {
         Spacer(modifier = Modifier.height(32.dp))
 
-        // Logo
+        // Title
+        Text(
+            text = "Chef Up",
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color.Black
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+// Logo
         Box(
             modifier = Modifier
                 .size(100.dp)
@@ -76,19 +86,11 @@ fun SignUp(
             Image(
                 painter = painterResource(id = R.drawable.image2),
                 contentDescription = "Logo",
-                contentScale = ContentScale.Crop, // ✅ Fill the circle
+                contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize()
             )
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Text(
-            text = "Chef Up",
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color.Black
-        )
 
         Spacer(modifier = Modifier.height(8.dp))
 

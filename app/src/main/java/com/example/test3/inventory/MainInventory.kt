@@ -1,60 +1,67 @@
 package com.example.test3.inventory
 
-import androidx.compose.foundation.*
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.*
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.runtime.Composable
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.text.googlefonts.GoogleFont
-import androidx.compose.ui.text.googlefonts.Font
-import androidx.compose.ui.text.googlefonts.GoogleFont.Provider
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.material.icons.filled.CameraAlt
-import androidx.compose.material.icons.filled.Map
-import androidx.compose.material.icons.filled.EmojiFoodBeverage
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.ui.draw.clip
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.runtime.SideEffect
-import androidx.compose.ui.text.font.FontWeight
 import com.example.test3.R
 import com.example.test3.Screen
+import com.example.test3.components.BottomNavBar
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.input.ImeAction
 
 
-val provider2 = Provider(
-    providerAuthority = "com.google.android.gms.fonts",
-    providerPackage = "com.google.android.gms",
-    certificates = R.array.com_google_android_gms_fonts_certs // default certificate array
-)
-
-val robotoFont2 = GoogleFont("Roboto")
-
-val fontFamily2 = FontFamily(
-    Font(googleFont = robotoFont2, fontProvider = provider2, weight = FontWeight.Normal),
-    Font(googleFont = robotoFont2, fontProvider = provider2, weight = FontWeight.Bold)
+data class StoredIngredient(
+    val id: String = "",
+    val name: String = "",
+    val quantity: String = "",
+    val storage: String = "",
+    val expirationDate: String = "",
+    val category: String = ""
 )
 
 @Composable
-fun InventoryScreen(onFindStoresClicked: () -> Unit = {}){
+fun InventoryScreen() {
     val systemUiController = rememberSystemUiController()
+    var searchQuery by remember { mutableStateOf("") }
+    val searchResults = remember { mutableStateListOf<StoredIngredient>() }
+    val userId = FirebaseAuth.getInstance().currentUser?.uid
+
 
     SideEffect {
-        systemUiController.setStatusBarColor(
-            color = Color(0xFFD4FF99), // or whatever background your inventory needs
-            darkIcons = true // Light icons = false, Dark icons = true
-        )
+        systemUiController.setStatusBarColor(Color(0xFFD4FF99), darkIcons = true)
     }
+
+    Scaffold(
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
+        bottomBar = {
+            BottomNavBar(
+                currentScreen = currentScreen,
+                onTabSelected = onTabSelected,
+                onAddIngredient = onAddIngredient
+            )
+        }
+    ) { innerPadding ->
 
     Box(
         modifier = Modifier
@@ -67,15 +74,6 @@ fun InventoryScreen(onFindStoresClicked: () -> Unit = {}){
                 .padding(top = 32.dp)
                 .background(Color.White)
         ) {
-            Button(
-                onClick = onFindStoresClicked,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 16.dp)
-            ) {
-                Text("Find Nearby Stores")
-            }
-
             TopSection()
             CategorySection()
             Spacer(modifier = Modifier.height(16.dp))
@@ -85,38 +83,46 @@ fun InventoryScreen(onFindStoresClicked: () -> Unit = {}){
     }
 }
 
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TopSection() {
+fun TopSection(
+    searchQuery: String,
+    onSearchChange: (String) -> Unit
+) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color(0xFFD4FF99))
-            .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 8.dp)
+            .padding(horizontal = 16.dp, vertical = 8.dp)
     ) {
         OutlinedTextField(
-            value = "",
-            onValueChange = {},
-            placeholder = { Text("Search") },
+            value = searchQuery,
+            onValueChange = onSearchChange,
+            placeholder = { Text("Search ingredients...") },
             modifier = Modifier
                 .fillMaxWidth()
                 .background(Color.White, RoundedCornerShape(12.dp)),
             leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
+            keyboardActions = KeyboardActions(onDone = {}),
             shape = RoundedCornerShape(12.dp),
             colors = TextFieldDefaults.outlinedTextFieldColors(
                 containerColor = Color.White
             )
         )
+
     }
 }
 
+
 @Composable
-fun CategorySection() {
+fun CategorySection(
+    onCategorySelected: (String) -> Unit
+) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color(0xFFD4FF99))
+            .padding(bottom = 16.dp)
     ) {
         Row(
             modifier = Modifier
@@ -142,12 +148,13 @@ fun CategorySection() {
         ) {
             listOf(
                 "Fruits" to R.drawable.fruits,
-                "Veggies" to R.drawable.veggies,
+                "Vegetables" to R.drawable.veggies,
                 "Grains" to R.drawable.grains,
                 "Proteins" to R.drawable.proteins
             ).forEach { (label, imageRes) ->
                 Column(
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.clickable { onCategorySelected(label) }
                 ) {
                     Image(
                         painter = painterResource(id = imageRes),
@@ -155,71 +162,40 @@ fun CategorySection() {
                         modifier = Modifier
                             .size(72.dp)
                             .clip(CircleShape)
-                            .border(1.dp, Color.LightGray, CircleShape)
                             .background(Color.White)
-
                     )
                     Text(label)
                 }
             }
         }
-
-        Spacer(modifier = Modifier.height(20.dp))
     }
 }
 
 
 @Composable
-fun StorageSection() {
+fun StorageSection(
+    onStorageSelected: (String) -> Unit
+) {
     Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-        listOf("Fridge", "Pantry", "All Storage").forEach { title ->
+        listOf("Fridge", "Freezer", "Pantry", "All Storage").forEach { title ->
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 20.dp), // larger spacing
+                    .clickable { onStorageSelected(title) }
+                    .padding(vertical = 20.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    "$title:",
+                    text = "$title:",
                     fontWeight = FontWeight.Bold,
                     fontSize = 28.sp
                 )
-                Icon(Icons.Default.ArrowForward, contentDescription = null)
+                Icon(Icons.Default.ArrowForward, contentDescription = "$title details")
             }
         }
 
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(top = 20.dp)
-        ) {
-            Text("Add Storage Unit", fontWeight = FontWeight.Bold, fontSize = 20.sp)
-            Spacer(modifier = Modifier.width(8.dp))
-            Icon(Icons.Default.AddCircle, contentDescription = "Add")
-        }
+        Spacer(modifier = Modifier.height(20.dp))
+
     }
 }
-
-@Composable
-fun BottomNavBar(
-    currentScreen: Screen,
-    onTabSelected: (Screen) -> Unit
-) {
-    BottomNavigation(
-        backgroundColor = Color.White,
-        contentColor = Color.Black,
-        modifier = Modifier.height(56.dp)
-    ) {
-        BottomNavigationItem(
-            icon = { Icon(Icons.Default.Home, contentDescription = "Home", modifier = Modifier.offset(y = (-4).dp)) },
-            selected = currentScreen is Screen.Home,
-            onClick = { onTabSelected(Screen.Home) }
-        )
-        BottomNavigationItem(
-            icon = { Icon(Icons.Default.Settings, contentDescription = "Settings", modifier = Modifier.offset(y = (-4).dp)) },
-            selected = currentScreen is Screen.Settings,
-            onClick = { onTabSelected(Screen.Settings) }
-        )
-    }
-}
-

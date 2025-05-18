@@ -1,5 +1,6 @@
 package com.example.test3.settings
 
+import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -10,11 +11,8 @@ import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.SideEffect
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -24,64 +22,77 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.rememberAsyncImagePainter
 import com.example.test3.R
 import com.example.test3.Screen
+import com.example.test3.components.BottomNavBar
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-import androidx.compose.runtime.*
-
-
+import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.launch
 
 @Composable
 fun Settings(
-    onNavigate: (Screen) -> Unit
+    onNavigate: (Screen) -> Unit,
+    currentScreen: Screen,
+    onTabSelected: (Screen) -> Unit,
+    onAddIngredient: () -> Unit,
+    onSignOut: () -> Unit
 ) {
-
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val uid = FirebaseAuth.getInstance().currentUser?.uid
+
     var firstName by remember { mutableStateOf("First") }
     var lastName by remember { mutableStateOf("Last") }
 
-    LaunchedEffect(Unit) {
-        val uid = FirebaseAuth.getInstance().currentUser?.uid
+    val userId = FirebaseAuth.getInstance().currentUser?.uid
+    val savedImageUri by ProfileImageStore.getProfileImageUri(context, userId ?: "").collectAsState(initial = null)
+
+
+    // Load user name from Firestore
+    LaunchedEffect(uid) {
         if (uid != null) {
-            FirebaseFirestore.getInstance()
+            val doc = FirebaseFirestore.getInstance()
                 .collection("users")
                 .document(uid)
                 .get()
-                .addOnSuccessListener { doc ->
-                    firstName = doc.getString("firstName") ?: "First"
-                    lastName = doc.getString("lastName") ?: "Last"
-                }
-                .addOnFailureListener {
-                    // Optionally handle error
-                }
+                .await()
+
+            firstName = doc.getString("firstName") ?: "First"
+            lastName = doc.getString("lastName") ?: "Last"
         }
     }
 
-
     val systemUiController = rememberSystemUiController()
-
     SideEffect {
-        systemUiController.setStatusBarColor(
-            color = Color(0xFFD4FF99),
-            darkIcons = true
-        )
+        systemUiController.setStatusBarColor(Color(0xFFD4FF99), darkIcons = true)
     }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.White)
-    ) {
-        Column(modifier = Modifier.fillMaxSize()) {
+    Scaffold(
+        bottomBar = {
+            BottomNavBar(
+                currentScreen = currentScreen,
+                onTabSelected = onTabSelected,
+                onAddIngredient = onAddIngredient
+            )
+        }
+    ) { innerPadding ->
+        val bottomInset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
 
-            // Header
+        Column(
+            modifier = Modifier
+                .padding(innerPadding)
+                .padding(bottom = bottomInset)
+                .fillMaxSize()
+                .background(Color.White)
+        ) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(Color(0xFFD4FF99))
-                    .statusBarsPadding()
+                    .padding(WindowInsets.statusBars.asPaddingValues())
                     .padding(horizontal = 16.dp, vertical = 16.dp)
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -99,7 +110,8 @@ fun Settings(
                 }
             }
 
-            // Profile card
+            Spacer(modifier = Modifier.height(16.dp))
+
             Card(
                 modifier = Modifier
                     .padding(16.dp)
@@ -114,35 +126,31 @@ fun Settings(
                             .padding(16.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+                        val savedImageUri by ProfileImageStore.getProfileImageUri(context, userId ?: "").collectAsState(initial = null)
+
                         Image(
-                            painter = painterResource(id = R.drawable.profile_placeholder),
+                            painter = savedImageUri?.let { rememberAsyncImagePainter(Uri.parse(it)) }
+                                ?: painterResource(id = R.drawable.profile_placeholder),
                             contentDescription = "Profile image",
                             modifier = Modifier
-                                .size(48.dp)
+                                .size(64.dp)
                                 .clip(CircleShape)
                         )
+
+
                         Spacer(modifier = Modifier.width(12.dp))
                         Text("$firstName $lastName", fontSize = 18.sp, fontWeight = FontWeight.Medium)
-
                     }
 
                     Divider()
 
                     SettingsSection(title = "Account Settings") {
-                        SettingsItem(title = "Edit profile", onClick = {
-                            onNavigate(Screen.Profile)
-                        })
-                        SettingsItem(title = "Change password", onClick = {
-                            // Add logic if needed
-                        })
-                        /*SettingsItem(title = "Push notifications", trailingContent = {
-                            Switch(checked = false, onCheckedChange = {})
-                        })*/
+                        SettingsItem(title = "Edit profile", onClick = { onNavigate(Screen.Profile) })
+                        SettingsItem(title = "Change password", onClick = { onNavigate(Screen.ChangePassword) })
                     }
                 }
             }
 
-            // More Section
             Card(
                 modifier = Modifier
                     .padding(horizontal = 16.dp)
@@ -151,24 +159,55 @@ fun Settings(
                 elevation = 4.dp
             ) {
                 Column {
-                    SettingsSection(title = "More") {
-                        SettingsItem(title = "About us", onClick = {
-                            onNavigate(Screen.About)
-                        })
-                        SettingsItem(title = "Privacy policy", onClick = {
-                            onNavigate(Screen.Privacy)
-                        })
-                        SettingsItem(title = "Terms and conditions", onClick = {
-                            onNavigate(Screen.Terms)
-                        })
+                    SettingsSection("More") {
+                        SettingsItem(title = "About us", onClick = { onNavigate(Screen.About) })
+                        SettingsItem(title = "Privacy policy", onClick = { onNavigate(Screen.Privacy) })
+                        SettingsItem(title = "Terms and conditions", onClick = { onNavigate(Screen.Terms) })
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.height(16.dp))
+
+            var showSignOutDialog by remember { mutableStateOf(false) }
+
+            if (showSignOutDialog) {
+                AlertDialog(
+                    onDismissRequest = { showSignOutDialog = false },
+                    title = { Text("Confirm Sign Out") },
+                    text = { Text("Are you sure you want to sign out?") },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            FirebaseAuth.getInstance().signOut()
+                            onSignOut()
+                        }) {
+                            Text("Yes")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showSignOutDialog = false }) {
+                            Text("Cancel")
+                        }
+                    }
+                )
+            }
+
+            Button(
+                onClick = { showSignOutDialog = true },
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .padding(horizontal = 16.dp)
+                    .fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(backgroundColor = Color(0xFFFF6B6B))
+            ) {
+                Text("Sign Out", color = Color.White)
+            }
+
+            Spacer(modifier = Modifier.height(32.dp))
         }
     }
 }
+
 
 @Composable
 fun SettingsItem(

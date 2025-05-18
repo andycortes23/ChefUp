@@ -63,24 +63,14 @@ dependencies {
     implementation("androidx.compose.foundation:foundation")
     implementation("androidx.compose.material:material")
     implementation("androidx.compose.material:material-icons-extended")
-    implementation(libs.google.accompanist.systemuicontroller)
+    implementation (libs.google.accompanist.systemuicontroller)
     implementation(platform("com.google.firebase:firebase-bom:33.13.0"))
     implementation("com.google.firebase:firebase-analytics")
-    implementation("com.google.firebase:firebase-auth-ktx:22.1.2")
-    implementation("com.google.firebase:firebase-firestore-ktx:24.11.0")
-    implementation("com.google.firebase:firebase-auth-ktx:22.1.2")
-    implementation("com.google.android.gms:play-services-auth:21.0.0")
+    implementation ("com.google.firebase:firebase-auth-ktx:22.1.2")
+    implementation ("com.google.firebase:firebase-firestore-ktx:24.11.0")
+    implementation ("com.google.firebase:firebase-auth-ktx:22.1.2")
+    implementation ("com.google.android.gms:play-services-auth:21.0.0")
 
-    implementation("com.google.android.gms:play-services-maps:18.1.0")
-    implementation("com.google.android.gms:play-services-location:21.0.1")
-    implementation("com.squareup.retrofit2:retrofit:2.9.0")
-    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
 
-    implementation("androidx.recyclerview:recyclerview:1.3.1")
-
-    implementation("com.google.android.libraries.places:places:3.3.0")
-
-    implementation("com.squareup.okhttp3:okhttp:4.11.0")
-
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4")
 }
+

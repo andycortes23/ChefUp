@@ -1,7 +1,7 @@
 package com.example.test3
 
+import android.os.Build
 import android.os.Bundle
-import android.content.Intent
 import android.widget.Toast
 import android.graphics.Color as AndroidColor
 import androidx.activity.ComponentActivity
@@ -9,11 +9,9 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -25,28 +23,38 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
 import kotlinx.coroutines.delay
 import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.compose.ui.Alignment
-import androidx.compose.material3.Text
-import com.example.test3.SplashPage
 import com.example.test3.settings.AboutUsScreen
 import com.example.test3.settings.PrivacyPolicyScreen
 import com.example.test3.settings.TermsAndConditionsScreen
-import com.example.test3.signup.NameEntryScreen
-import androidx.compose.ui.unit.sp
-import com.example.test3.inventory.BottomNavBar
 import com.example.test3.signup.NameEntryScreen
 import com.example.test3.inventory.InventoryScreen
 import com.example.test3.login.LoginScreen
 import com.google.firebase.firestore.FirebaseFirestore
 import com.example.test3.settings.Settings
 import androidx.compose.material3.Scaffold
-import com.example.test3.StoreFinderScreen //Import Composable
-import com.google.android.libraries.places.api.Places
+
+
+
+/*
+class MainActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        window.statusBarColor = AndroidColor.BLACK
+        WindowCompat.setDecorFitsSystemWindows(window, true)
+        WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = false
+
+        setContent {
+            AboutUsScreen() //Change this to the screen you would like to displau and comment out the bottom code
+        }
+    }
+}
+*/
 
 sealed class Screen {
-    object Splash : Screen()
-    object SignUp : Screen()
-    object Login : Screen()
+    data object Splash : Screen()
+    data object SignUp : Screen()
+    data object Login : Screen()
     data class NameEntry(val userId: String, val email: String, val fromGoogle: Boolean = false) : Screen()
     object Home : Screen()
     object Terms : Screen()
@@ -54,12 +62,51 @@ sealed class Screen {
     object Settings : Screen()
     object About : Screen()
     object Profile : Screen()
-    object StoreFinder : Screen() // Added this
+
 }
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        FirebaseApp.initializeApp(this)
+        Firebase.analytics.logEvent(FirebaseAnalytics.Event.APP_OPEN, null)
+
+        val config = FirebaseRemoteConfig.getInstance()
+        val settings = FirebaseRemoteConfigSettings.Builder()
+            .setMinimumFetchIntervalInSeconds(0) // Use 3600+ in production
+            .build()
+        config.setConfigSettingsAsync(settings)
+        config.fetchAndActivate()
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                101
+            )
+        }
+        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                val token = task.result
+                Log.d("FCM_TOKEN", "Token: $token")
+            }
+        }
+
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                101
+            )
+        }
+        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                val token = task.result
+                Log.d("FCM_TOKEN", "Token: $token")
+            }
+        }
+
 
         window.statusBarColor = AndroidColor.WHITE
         WindowCompat.setDecorFitsSystemWindows(window, true)
@@ -123,17 +170,26 @@ class MainActivity : ComponentActivity() {
 
             Scaffold(
                 bottomBar = {
-                    if (currentScreen is Screen.Home || currentScreen is Screen.Settings) {
+                    if (currentScreen is Screen.Home || currentScreen is Screen.Settings || currentScreen is Screen.MealPlanGen) {
                         BottomNavBar(
                             currentScreen = currentScreen,
-                            onTabSelected = { selected -> currentScreen = selected }
+                            onTabSelected = { selected -> currentScreen = selected },
+                            onAddIngredient = { currentScreen = Screen.AddIngredients }
                         )
                     }
                 }
             ) { innerPadding ->
                 Crossfade(targetState = currentScreen, animationSpec = tween(500)) { screen ->
                     when (screen) {
-                        is Screen.Splash -> SplashScreenWithDelay { currentScreen = Screen.SignUp }
+                        is Screen.Splash -> SplashScreenWithDelay {
+                            val user = FirebaseAuth.getInstance().currentUser
+                            if (user != null) {
+                                currentScreen = Screen.Home
+                            } else {
+                                currentScreen = Screen.Login
+                            }
+                        }
+
 
                         is Screen.SignUp -> Box(Modifier.padding(bottom = innerPadding.calculateBottomPadding())) {
                             SignUp(
@@ -195,22 +251,18 @@ class MainActivity : ComponentActivity() {
                         }
 
                         is Screen.Home -> Box(Modifier.padding(bottom = innerPadding.calculateBottomPadding())) {
-                            InventoryScreen(
-                                // 🔽 Optional: add a way to navigate to StoreFinder
-                                onFindStoresClicked = { currentScreen = Screen.StoreFinder }
-                            )
+                            InventoryScreen()
                         }
 
-                        is Screen.StoreFinder -> Box(Modifier.padding(bottom = innerPadding.calculateBottomPadding())) {
-                            StoreFinderScreen() // ✅ New screen handler
-                        }
 
-                        is Screen.Settings -> Box(Modifier.padding(bottom = innerPadding.calculateBottomPadding())) {
-                            Settings(onNavigate = {
-                                previousScreen = currentScreen
-                                currentScreen = it
-                            })
-                        }
+                        is Screen.Settings -> Settings(
+                            onNavigate = { screen -> currentScreen = screen },
+                            currentScreen = currentScreen,
+                            onTabSelected = { selected -> currentScreen = selected },
+                            onAddIngredient = { currentScreen = Screen.AddIngredients },
+                            onSignOut = { currentScreen = Screen.Login}
+                        )
+
 
                         is Screen.Terms -> Box(Modifier.padding(bottom = innerPadding.calculateBottomPadding())) {
                             TermsAndConditionsScreen(onBack = {
@@ -229,13 +281,13 @@ class MainActivity : ComponentActivity() {
                                 currentScreen = previousScreen ?: Screen.Settings
                             })
                         }
-
                         is Screen.Profile -> Box(
                             modifier = Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center
                         ) {
                             Text("Edit Profile screen coming soon!", fontSize = 20.sp)
                         }
+
                     }
 
                     toastMessage?.let {
