@@ -2,7 +2,6 @@ package com.example.test3
 
 import android.os.Build
 import android.os.Bundle
-import android.content.Intent
 import android.widget.Toast
 import android.graphics.Color as AndroidColor
 import androidx.activity.ComponentActivity
@@ -10,11 +9,9 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -26,14 +23,9 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
 import kotlinx.coroutines.delay
 import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.compose.ui.Alignment
-import androidx.compose.material3.Text
-import com.example.test3.SplashPage
 import com.example.test3.settings.AboutUsScreen
 import com.example.test3.settings.PrivacyPolicyScreen
 import com.example.test3.settings.TermsAndConditionsScreen
-import com.example.test3.signup.NameEntryScreen
-import androidx.compose.ui.unit.sp
 import com.example.test3.signup.NameEntryScreen
 import com.example.test3.inventory.InventoryScreen
 import com.example.test3.login.LoginScreen
@@ -54,7 +46,7 @@ import com.example.test3.inventory.AddIngredientScreen
 import com.example.test3.inventory.IngredientListByCategoryScreen
 import com.example.test3.inventory.IngredientListScreen
 import com.example.test3.settings.EditProfileScreen
-
+import com.example.test3.mealplanner.MealPlanGenScreen
 
 /*
 class MainActivity : ComponentActivity() {
@@ -75,23 +67,25 @@ class MainActivity : ComponentActivity() {
 
 
 sealed class Screen {
-    object Splash : Screen()
-    object SignUp : Screen()
-    object Login : Screen()
+    data object Splash : Screen()
+    data object SignUp : Screen()
+    data object Login : Screen()
     data class NameEntry(val userId: String, val email: String, val fromGoogle: Boolean = false) : Screen()
-    object Home : Screen()
-    object Terms : Screen()
-    object Privacy : Screen()
-    object Settings : Screen()
-    object About : Screen()
-    object Profile : Screen()
-    object ChangePassword : Screen()
-    object AddIngredients : Screen()
+    data object Home : Screen()
+    data object Terms : Screen()
+    data object Privacy : Screen()
+    data object Settings : Screen()
+    data object About : Screen()
+    data object Profile : Screen()
+    data object ChangePassword : Screen()
+    data object AddIngredients : Screen()
+    data object MealPlanGen : Screen()
+    data object OfflineMeals : Screen()
 
+    data class MealDetail(val recipe: com.example.test3.mealplanner.Recipe) : Screen()
 
     data class IngredientList(val storage: String) : Screen()
     data class CategoryList(val category: String) : Screen()
-
 }
 
 
@@ -190,7 +184,7 @@ class MainActivity : ComponentActivity() {
 
             Scaffold(
                 bottomBar = {
-                    if (currentScreen is Screen.Home || currentScreen is Screen.Settings) {
+                    if (currentScreen is Screen.Home || currentScreen is Screen.Settings || currentScreen is Screen.MealPlanGen) {
                         BottomNavBar(
                             currentScreen = currentScreen,
                             onTabSelected = { selected -> currentScreen = selected },
@@ -351,6 +345,24 @@ class MainActivity : ComponentActivity() {
                         is Screen.CategoryList -> IngredientListByCategoryScreen(
                             category = screen.category,
                             onBack = { currentScreen = Screen.Home }
+                        )
+                        is Screen.MealPlanGen -> MealPlanGenScreen(
+                            onRecipeSelected = { selectedRecipe ->
+                                currentScreen = Screen.MealDetail(selectedRecipe)
+                            },
+                            onOfflineClick = {
+                                currentScreen = Screen.OfflineMeals
+                            }
+                        )
+                        is Screen.OfflineMeals -> com.example.test3.mealplanner.MealOfflineScreen(
+                            onRecipeSelected = { selectedRecipe ->
+                                currentScreen = Screen.MealDetail(selectedRecipe)
+                            },
+                            onBack = { currentScreen = Screen.MealPlanGen }
+                        )
+                        is Screen.MealDetail -> com.example.test3.mealplanner.MealDetailScreen(
+                            recipe = screen.recipe,
+                            onBack = { currentScreen = Screen.MealPlanGen }
                         )
 
 

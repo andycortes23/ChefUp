@@ -3,6 +3,7 @@ package com.example.test3.components
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.RestaurantMenu
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -47,6 +48,18 @@ fun BottomNavBar(
             selected = currentScreen is Screen.AddIngredients,
             onClick = onAddIngredient,
             label = { Text("Add") }
+        )
+
+        NavigationBarItem(
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.RestaurantMenu,
+                    contentDescription = "Meals"
+                )
+            },
+            selected = currentScreen is Screen.MealPlanGen,
+            onClick = { onTabSelected(Screen.MealPlanGen) },
+            label = { Text("Meals") }
         )
 
         NavigationBarItem(
