@@ -51,7 +51,7 @@ import com.example.test3.mealplanner.MealPlanGenScreen
 import com.example.test3.settings.ChangePasswordScreen
 import com.example.test3.inventory.IngredientListScreen
 import com.example.test3.inventory.IngredientListByCategoryScreen
-
+import com.example.test3.settings.EditProfileScreen
 
 
 /*
@@ -84,6 +84,8 @@ sealed class Screen {
     object AddIngredients : Screen()
     object MealPlanGen : Screen()
     object ChangePassword : Screen()
+    object StoreFinder : Screen()
+
 
     data class StorageDetail(val storage: String) : Screen()
     data class CategoryDetail(val category: String) : Screen()
@@ -195,7 +197,7 @@ class MainActivity : ComponentActivity() {
 
             Scaffold(
                 bottomBar = {
-                    if (currentScreen is Screen.Home || currentScreen is Screen.Settings || currentScreen is Screen.MealPlanGen) {
+                    if (currentScreen is Screen.Home || currentScreen is Screen.Settings || currentScreen is Screen.MealPlanGen || currentScreen is Screen.AddIngredients || currentScreen is Screen.StoreFinder) {
                         BottomNavBar(
                             currentScreen = currentScreen,
                             onTabSelected = { selected -> currentScreen = selected },
@@ -318,11 +320,11 @@ class MainActivity : ComponentActivity() {
                                 currentScreen = previousScreen ?: Screen.Settings
                             })
                         }
-                        is Screen.Profile -> Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text("Edit Profile screen coming soon!", fontSize = 20.sp)
+                        is Screen.Profile -> Box(Modifier.padding(bottom = innerPadding.calculateBottomPadding())) {
+                            EditProfileScreen(
+                                onBackClicked = { currentScreen = Screen.Settings },
+                                onSaveSuccess = { currentScreen = Screen.Settings }
+                            )
                         }
                         is Screen.AddIngredients -> Box(Modifier.padding(bottom = innerPadding.calculateBottomPadding())) {
                             AddIngredientScreen(
@@ -353,6 +355,10 @@ class MainActivity : ComponentActivity() {
                             category = screen.category,
                             onBack = { currentScreen = Screen.Home }
                         )
+                        is Screen.StoreFinder -> Box(Modifier.padding(bottom = innerPadding.calculateBottomPadding())) {
+                            StoreFinderScreen()
+                        }
+
 
 
                     }

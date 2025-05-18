@@ -52,10 +52,9 @@ fun EditProfileScreen(
     var lastName by remember { mutableStateOf(TextFieldValue("")) }
     var error by remember { mutableStateOf<String?>(null) }
 
-    // State for new, unsaved image
+
     var imageUri by remember { mutableStateOf<Uri?>(null) }
 
-    // Load previously saved image
     val savedImageUri by ProfileImageStore.getProfileImageUri(context, userId).collectAsState(initial = null)
 
     val imagePickerLauncher = rememberLauncherForActivityResult(
@@ -67,7 +66,7 @@ fun EditProfileScreen(
                     uri,
                     Intent.FLAG_GRANT_READ_URI_PERMISSION
                 )
-                imageUri = uri // ✅ Only save locally on "Save"
+                imageUri = uri
             } catch (e: SecurityException) {
                 Log.e("EditProfile", "Permission error: ${e.message}")
             }
@@ -77,14 +76,13 @@ fun EditProfileScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     var showSuccessSnackbar by remember { mutableStateOf(false) }
 
-    // Load Firestore name
+
     LaunchedEffect(uid) {
         val doc = FirebaseFirestore.getInstance().collection("users").document(uid).get().await()
         firstName = TextFieldValue(doc.getString("firstName") ?: "")
         lastName = TextFieldValue(doc.getString("lastName") ?: "")
     }
 
-    // Show snackbar on success
     LaunchedEffect(showSuccessSnackbar) {
         if (showSuccessSnackbar) {
             snackbarHostState.showSnackbar("Profile updated!")
@@ -107,7 +105,7 @@ fun EditProfileScreen(
         ) {
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Back button
+
             Row(modifier = Modifier.fillMaxWidth()) {
                 IconButton(onClick = onBackClicked) {
                     Icon(Icons.Default.ArrowBack, contentDescription = "Back")
@@ -116,10 +114,10 @@ fun EditProfileScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Determine image to show
+
             val displayUri = imageUri ?: savedImageUri?.let { Uri.parse(it) }
 
-            // Profile Image
+
             Box(
                 modifier = Modifier
                     .size(100.dp)
@@ -182,7 +180,6 @@ fun EditProfileScreen(
                         )
                         .addOnSuccessListener {
                             scope.launch {
-                                // ✅ Save image only if one was picked
                                 if (imageUri != null) {
                                     ProfileImageStore.saveProfileImageUri(
                                         context,

@@ -65,6 +65,18 @@ fun BottomNavBar(
         NavigationBarItem(
             icon = {
                 Icon(
+                    imageVector = Icons.Default.AddLocation,
+                    contentDescription = "Location"
+                )
+            },
+            selected = currentScreen is Screen.Settings,
+            onClick = { onTabSelected(Screen.StoreFinder) },
+            label = { Text("Locations") }
+        )
+
+        NavigationBarItem(
+            icon = {
+                Icon(
                     imageVector = Icons.Default.Settings,
                     contentDescription = "Settings"
                 )
