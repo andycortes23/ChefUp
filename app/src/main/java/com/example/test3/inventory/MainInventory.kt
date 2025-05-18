@@ -46,7 +46,7 @@ val fontFamily2 = FontFamily(
 )
 
 @Composable
-fun InventoryScreen() {
+fun InventoryScreen(onFindStoresClicked: () -> Unit = {}){
     val systemUiController = rememberSystemUiController()
 
     SideEffect {
@@ -67,6 +67,15 @@ fun InventoryScreen() {
                 .padding(top = 32.dp)
                 .background(Color.White)
         ) {
+            Button(
+                onClick = onFindStoresClicked,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp)
+            ) {
+                Text("Find Nearby Stores")
+            }
+
             TopSection()
             CategorySection()
             Spacer(modifier = Modifier.height(16.dp))

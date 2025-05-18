@@ -40,24 +40,8 @@ import com.example.test3.login.LoginScreen
 import com.google.firebase.firestore.FirebaseFirestore
 import com.example.test3.settings.Settings
 import androidx.compose.material3.Scaffold
-
-
-
-/*
-class MainActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-
-        window.statusBarColor = AndroidColor.BLACK
-        WindowCompat.setDecorFitsSystemWindows(window, true)
-        WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = false
-
-        setContent {
-            AboutUsScreen() //Change this to the screen you would like to displau and comment out the bottom code
-        }
-    }
-}
-*/
+import com.example.test3.StoreFinderScreen //Import Composable
+import com.google.android.libraries.places.api.Places
 
 sealed class Screen {
     object Splash : Screen()
@@ -70,9 +54,8 @@ sealed class Screen {
     object Settings : Screen()
     object About : Screen()
     object Profile : Screen()
-
+    object StoreFinder : Screen() // Added this
 }
-
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -83,6 +66,10 @@ class MainActivity : ComponentActivity() {
         WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = true
 
         FirebaseApp.initializeApp(this)
+
+        if (!Places.isInitialized()) {
+            Places.initialize(applicationContext, "AIzaSyBPMpgZnvRwyiD47P-togXkkGLLAbJ64Jo")
+        }
 
         setContent {
             val context = LocalContext.current
@@ -208,7 +195,14 @@ class MainActivity : ComponentActivity() {
                         }
 
                         is Screen.Home -> Box(Modifier.padding(bottom = innerPadding.calculateBottomPadding())) {
-                            InventoryScreen()
+                            InventoryScreen(
+                                // 🔽 Optional: add a way to navigate to StoreFinder
+                                onFindStoresClicked = { currentScreen = Screen.StoreFinder }
+                            )
+                        }
+
+                        is Screen.StoreFinder -> Box(Modifier.padding(bottom = innerPadding.calculateBottomPadding())) {
+                            StoreFinderScreen() // ✅ New screen handler
                         }
 
                         is Screen.Settings -> Box(Modifier.padding(bottom = innerPadding.calculateBottomPadding())) {
@@ -235,13 +229,13 @@ class MainActivity : ComponentActivity() {
                                 currentScreen = previousScreen ?: Screen.Settings
                             })
                         }
+
                         is Screen.Profile -> Box(
                             modifier = Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center
                         ) {
                             Text("Edit Profile screen coming soon!", fontSize = 20.sp)
                         }
-
                     }
 
                     toastMessage?.let {
@@ -253,9 +247,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
-
-
-
 
 @Composable
 fun SplashScreenWithDelay(onDone: () -> Unit) {
