@@ -47,6 +47,8 @@ import com.example.test3.inventory.IngredientListByCategoryScreen
 import com.example.test3.inventory.IngredientListScreen
 import com.example.test3.settings.EditProfileScreen
 import com.example.test3.mealplanner.MealPlanGenScreen
+import com.google.firebase.remoteconfig.FirebaseRemoteConfig
+import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings
 
 /*
 class MainActivity : ComponentActivity() {
@@ -95,6 +97,12 @@ class MainActivity : ComponentActivity() {
         FirebaseApp.initializeApp(this)
         Firebase.analytics.logEvent(FirebaseAnalytics.Event.APP_OPEN, null)
 
+        val config = FirebaseRemoteConfig.getInstance()
+        val settings = FirebaseRemoteConfigSettings.Builder()
+            .setMinimumFetchIntervalInSeconds(0) // Use 3600+ in production
+            .build()
+        config.setConfigSettingsAsync(settings)
+        config.fetchAndActivate()
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             ActivityCompat.requestPermissions(
