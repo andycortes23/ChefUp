@@ -160,27 +160,32 @@ class MainActivity : ComponentActivity() {
         setContent {
             val context = LocalContext.current
             val connectivityObserver = remember { ConnectivityObserver(context) }
-            val isOnline by connectivityObserver.connectionStatus.collectAsState(initial = false)
+            val isOnline = remember { mutableStateOf(isNetworkAvailable(context)) }
+
+            LaunchedEffect(Unit) {
+                connectivityObserver.connectionStatus.collect {
+                    isOnline.value = isNetworkAvailable(context)
+                }
+            }
             val snackbarHostState = remember { SnackbarHostState() }
             val scope = rememberCoroutineScope()
-            var wasOffline by remember { mutableStateOf(!isOnline) }
             var currentScreen by remember { mutableStateOf<Screen>(Screen.Splash) }
             var hasShownInitialStatus by remember { mutableStateOf(false) }
             var lastOnlineState by remember { mutableStateOf<Boolean?>(null) }
 
-            LaunchedEffect(isOnline, currentScreen) {
+            LaunchedEffect(isOnline.value, currentScreen) {
                 if (currentScreen !is Screen.Splash) {
                     if (!hasShownInitialStatus) {
                         hasShownInitialStatus = true
-                        lastOnlineState = isOnline
+                        lastOnlineState = isOnline.value
                         scope.launch {
-                            val message = if (isOnline) "Online!" else "You're offline. Some features may not work."
+                            val message = if (isOnline.value) "Online!" else "You're offline. Some features may not work."
                             snackbarHostState.showSnackbar(message)
                         }
-                    } else if (lastOnlineState != isOnline) {
-                        lastOnlineState = isOnline
+                    } else if (lastOnlineState != isOnline.value) {
+                        lastOnlineState = isOnline.value
                         scope.launch {
-                            val message = if (isOnline) "Online!" else "You're offline. Some features may not work."
+                            val message = if (isOnline.value) "Online!" else "You're offline. Some features may not work."
                             snackbarHostState.showSnackbar(message)
                         }
                     }
