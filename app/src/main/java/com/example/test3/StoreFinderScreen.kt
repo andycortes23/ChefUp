@@ -61,7 +61,7 @@ fun StoreFinderScreen() {
     var manualInput           by remember { mutableStateOf("") }
     val storeList             = remember { mutableStateListOf<String>() }
 
-    // Pill‐shaped black buttons with white text
+    // Pill-shaped black buttons with white text
     val pillShape  = RoundedCornerShape(24.dp)
     val pillColors = ButtonDefaults.buttonColors(
         containerColor = Color.Black,
@@ -80,7 +80,7 @@ fun StoreFinderScreen() {
         }
     }
 
-    // exact same header color as your “Add Ingredient” screen
+    // Header background
     val headerBg = Color(0xFFD4FF99)
 
     Scaffold(
@@ -106,7 +106,6 @@ fun StoreFinderScreen() {
                 .padding(16.dp)
         ) {
             when (entryMode) {
-                // ─── CHOOSE ──────────────────────────
                 EntryMode.Choose -> Column(
                     modifier            = Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally
@@ -146,7 +145,6 @@ fun StoreFinderScreen() {
                     }
                 }
 
-                // ─── DEVICE ──────────────────────────
                 EntryMode.UseDevice -> {
                     if (!hasLocationPermission) {
                         Text("Waiting for location permission…")
@@ -186,15 +184,17 @@ fun StoreFinderScreen() {
                             Text("Locating stores around you…")
                         } else {
                             Column(
-                                modifier            = Modifier.fillMaxWidth(),
+                                modifier            = Modifier
+                                    .fillMaxWidth()
+                                    .fillMaxHeight(),  // constrain height
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
                                 Text("Nearby Grocery Stores:", Modifier.padding(bottom = 8.dp))
 
                                 LazyColumn(
-                                    modifier            = Modifier
+                                    modifier = Modifier
                                         .fillMaxWidth()
-                                        .weight(1f),
+                                        .weight(1f),   // use leftover space
                                     horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
                                     items(storeList) { line ->
@@ -222,9 +222,10 @@ fun StoreFinderScreen() {
                     }
                 }
 
-                // ─── MANUAL ──────────────────────────
                 EntryMode.Manual -> Column(
-                    modifier            = Modifier.fillMaxWidth(),
+                    modifier            = Modifier
+                        .fillMaxWidth()
+                        .fillMaxHeight(),      // constrain height
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     OutlinedTextField(
@@ -251,13 +252,11 @@ fun StoreFinderScreen() {
                                     }
                                 }
                                 if (addresses.isNullOrEmpty()) {
-                                    Toast
-                                        .makeText(
-                                            context,
-                                            "Could not find: $manualInput",
-                                            Toast.LENGTH_LONG
-                                        )
-                                        .show()
+                                    Toast.makeText(
+                                        context,
+                                        "Could not find: $manualInput",
+                                        Toast.LENGTH_LONG
+                                    ).show()
                                     isLoading = false
                                 } else {
                                     fetchNearbyStoresByCoordinates(
@@ -285,7 +284,12 @@ fun StoreFinderScreen() {
                         Text("Searching…")
                     } else {
                         Text("Results:", Modifier.padding(bottom = 8.dp))
-                        LazyColumn {
+
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .weight(1f)  // use leftover space
+                        ) {
                             items(storeList) { line ->
                                 Text(
                                     line,
@@ -319,7 +323,7 @@ fun StoreFinderScreen() {
     }
 }
 
-// ─── UNCHANGED HELPER ─────────────────────────────────────────
+// ─── HELPER ─────────────────────────────────────────────────
 private fun fetchNearbyStoresByCoordinates(
     context: Context,
     lat: Double,
