@@ -269,7 +269,7 @@ class MainActivity : FragmentActivity() {
                         BottomNavBar(
                             currentScreen = currentScreen,
                             onTabSelected = { selected ->
-                                if ((selected is Screen.StoreFinder || selected is Screen.MealPlanGen) && !isOnline.value) {
+                                if (selected is Screen.StoreFinder && !isOnline.value) {
                                     scope.launch {
                                         snackbarHostState.showSnackbar("You're offline. Some features may not work.")
                                     }
@@ -485,7 +485,9 @@ class MainActivity : FragmentActivity() {
                                 },
                                 onOfflineClick = {
                                     currentScreen = Screen.MealOffline
-                                }
+                                },
+                                isOnline = isOnline.value,
+                                snackbarHostState = snackbarHostState
                             )
                         }
                         is Screen.MealOffline -> Box(Modifier.padding(bottom = innerPadding.calculateBottomPadding())) {

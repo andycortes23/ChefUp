@@ -15,11 +15,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SmallTopAppBar
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -30,14 +32,18 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.test3.mealplanner.Recipe
 import com.example.test3.mealplanner.MealPlanViewModel
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MealPlanGenScreen(
     onRecipeSelected: (Recipe) -> Unit,
     onOfflineClick: () -> Unit,
+    isOnline: Boolean,
+    snackbarHostState: SnackbarHostState,
     viewModel: MealPlanViewModel = viewModel()
-) {
+){
+    val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val query by viewModel.query.collectAsState()
     val recipesToShow by viewModel.recipes.collectAsState()
@@ -99,11 +105,19 @@ fun MealPlanGenScreen(
                 Spacer(Modifier.height(8.dp))
 
                 Button(
-                    onClick  = { viewModel.fetchRecipes(context) },
+                    onClick = {
+                        if (!isOnline) {
+                            scope.launch {
+                                snackbarHostState.showSnackbar("You're offline. Some features may not work.")
+                            }
+                        } else {
+                            viewModel.fetchRecipes(context)
+                        }
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(48.dp),
-                    shape  = pillShape,
+                    shape = pillShape,
                     colors = pillColors
                 ) {
                     Text("Search")
