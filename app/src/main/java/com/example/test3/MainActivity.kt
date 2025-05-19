@@ -6,7 +6,7 @@ import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
 import android.graphics.Color as AndroidColor
-import androidx.activity.ComponentActivity
+import androidx.fragment.app.FragmentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.Crossfade
@@ -64,10 +64,15 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
+import androidx.biometric.BiometricManager
+import androidx.biometric.BiometricPrompt
+import androidx.biometric.BiometricPrompt.PromptInfo
+import androidx.core.content.ContextCompat
+import android.content.Context
 
 
 /*
-class MainActivity : ComponentActivity() {
+class MainActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -104,7 +109,7 @@ sealed class Screen {
     data class CategoryDetail(val category: String) : Screen()
 }
 
-class MainActivity : ComponentActivity() {
+class MainActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         FirebaseApp.initializeApp(this)
@@ -131,7 +136,6 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             ActivityCompat.requestPermissions(
                 this,
@@ -146,7 +150,6 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-
         window.statusBarColor = AndroidColor.WHITE
         WindowCompat.setDecorFitsSystemWindows(window, true)
         WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = true
@@ -157,6 +160,10 @@ class MainActivity : ComponentActivity() {
             Places.initialize(applicationContext, "AIzaSyBPMpgZnvRwyiD47P-togXkkGLLAbJ64Jo")
         }
 
+        showMainContent()
+    }
+
+    private fun showMainContent() {
         setContent {
             val context = LocalContext.current
             val connectivityObserver = remember { ConnectivityObserver(context) }
@@ -276,17 +283,27 @@ class MainActivity : ComponentActivity() {
             ) { innerPadding ->
                 Crossfade(targetState = currentScreen, animationSpec = tween(500)) { screen ->
                     when (screen) {
-                        is Screen.Splash -> SplashScreenWithDelay {
-                            val user = FirebaseAuth.getInstance().currentUser
-                            if (user != null) {
-                                currentScreen = Screen.Home
-                            } else {
-                                currentScreen = Screen.Login
+                        is Screen.Splash -> {
+                            val context = LocalContext.current
+                            SplashScreenWithDelay {
+                                val user = FirebaseAuth.getInstance().currentUser
+                                if (user != null) {
+                                    promptBiometricAuthentication(context) {
+                                        currentScreen = Screen.Home
+                                    }
+                                } else {
+                                    currentScreen = Screen.Login
+                                }
                             }
                         }
 
 
                         is Screen.SignUp -> Box(Modifier.padding(bottom = innerPadding.calculateBottomPadding())) {
+                            // 2FA dialog state for sign up
+                            var show2FADialog by remember { mutableStateOf(false) }
+                            var newUserId by remember { mutableStateOf("") }
+                            var newUserEmail by remember { mutableStateOf("") }
+                            val localContext = LocalContext.current
                             SignUp(
                                 onContinueClicked = { email, password ->
                                     FirebaseAuth.getInstance()
@@ -295,7 +312,9 @@ class MainActivity : ComponentActivity() {
                                             if (task.isSuccessful) {
                                                 val user = FirebaseAuth.getInstance().currentUser
                                                 if (user != null) {
-                                                    currentScreen = Screen.NameEntry(user.uid, user.email ?: "")
+                                                    show2FADialog = true
+                                                    newUserId = user.uid
+                                                    newUserEmail = user.email ?: ""
                                                 }
                                             } else {
                                                 toastMessage = task.exception?.message ?: "Sign-up failed"
@@ -316,11 +335,44 @@ class MainActivity : ComponentActivity() {
                                     currentScreen = Screen.Privacy
                                 }
                             )
+                            if (show2FADialog) {
+                                androidx.compose.material3.AlertDialog(
+                                    onDismissRequest = {
+                                        show2FADialog = false
+                                        currentScreen = Screen.NameEntry(newUserId, newUserEmail)
+                                    },
+                                    title = { Text("Enable 2FA?") },
+                                    text = { Text("Would you like to enable fingerprint 2-factor authentication?") },
+                                    confirmButton = {
+                                        androidx.compose.material3.TextButton(onClick = {
+                                            show2FADialog = false
+                                            promptBiometricAuthentication(localContext) {
+                                                currentScreen = Screen.NameEntry(newUserId, newUserEmail)
+                                            }
+                                        }) {
+                                            Text("Yes")
+                                        }
+                                    },
+                                    dismissButton = {
+                                        androidx.compose.material3.TextButton(onClick = {
+                                            show2FADialog = false
+                                            currentScreen = Screen.NameEntry(newUserId, newUserEmail)
+                                        }) {
+                                            Text("No")
+                                        }
+                                    }
+                                )
+                            }
                         }
 
                         is Screen.Login -> Box(Modifier.padding(bottom = innerPadding.calculateBottomPadding())) {
+                            var show2FADialog by remember { mutableStateOf(false) }
+                            val localContext = LocalContext.current
+                            // Show dialog when login success
                             LoginScreen(
-                                onLoginSuccess = { currentScreen = Screen.Home },
+                                onLoginSuccess = {
+                                    show2FADialog = true
+                                },
                                 onBackToSignUp = { currentScreen = Screen.SignUp },
                                 onGoogleClicked = {
                                     val intent = googleSignInClient.signInIntent
@@ -335,6 +387,31 @@ class MainActivity : ComponentActivity() {
                                     currentScreen = Screen.Privacy
                                 }
                             )
+                            if (show2FADialog) {
+                                androidx.compose.material3.AlertDialog(
+                                    onDismissRequest = { show2FADialog = false; currentScreen = Screen.Home },
+                                    title = { Text("Enable 2FA?") },
+                                    text = { Text("Would you like to enable fingerprint 2-factor authentication?") },
+                                    confirmButton = {
+                                        androidx.compose.material3.TextButton(onClick = {
+                                            show2FADialog = false
+                                            promptBiometricAuthentication(localContext) {
+                                                currentScreen = Screen.Home
+                                            }
+                                        }) {
+                                            Text("Yes")
+                                        }
+                                    },
+                                    dismissButton = {
+                                        androidx.compose.material3.TextButton(onClick = {
+                                            show2FADialog = false
+                                            currentScreen = Screen.Home
+                                        }) {
+                                            Text("No")
+                                        }
+                                    }
+                                )
+                            }
                         }
 
                         is Screen.NameEntry -> Box(Modifier.padding(bottom = innerPadding.calculateBottomPadding())) {
@@ -467,4 +544,39 @@ fun SplashScreenWithDelay(onDone: () -> Unit) {
     }
 
     SplashPage()
+}
+
+private fun promptBiometricAuthentication(
+    context: Context,
+    onSuccess: () -> Unit
+) {
+    val biometricManager = BiometricManager.from(context)
+
+    if (biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG) ==
+        BiometricManager.BIOMETRIC_SUCCESS) {
+
+        val executor = ContextCompat.getMainExecutor(context)
+        val biometricPrompt = BiometricPrompt(context as FragmentActivity, executor,
+            object : BiometricPrompt.AuthenticationCallback() {
+                override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                    super.onAuthenticationSucceeded(result)
+                    onSuccess()
+                }
+
+                override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
+                    super.onAuthenticationError(errorCode, errString)
+                    (context as? FragmentActivity)?.finish()
+                }
+            })
+
+        val promptInfo = BiometricPrompt.PromptInfo.Builder()
+            .setTitle("Biometric login for Chef Up")
+            .setSubtitle("Authenticate to access the app")
+            .setNegativeButtonText("Cancel")
+            .build()
+
+        biometricPrompt.authenticate(promptInfo)
+    } else {
+        onSuccess()
+    }
 }
