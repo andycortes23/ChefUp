@@ -261,7 +261,14 @@ class MainActivity : ComponentActivity() {
                     if (currentScreen is Screen.Home || currentScreen is Screen.Settings || currentScreen is Screen.MealPlanGen || currentScreen is Screen.AddIngredients || currentScreen is Screen.StoreFinder) {
                         BottomNavBar(
                             currentScreen = currentScreen,
-                            onTabSelected = { selected -> currentScreen = selected },
+                            onTabSelected = { selected ->
+                                if ((selected is Screen.StoreFinder || selected is Screen.MealPlanGen) && !isOnline.value) {
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar("You're offline. Some features may not work.")
+                                    }
+                                }
+                                currentScreen = selected
+                            },
                             onAddIngredient = { currentScreen = Screen.AddIngredients }
                         )
                     }
