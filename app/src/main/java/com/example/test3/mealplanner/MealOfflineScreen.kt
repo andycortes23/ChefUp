@@ -31,7 +31,7 @@ fun MealOfflineScreen(onRecipeSelected: (Recipe) -> Unit, onBack: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Offline Recipes", color = Color.White) },
+                title = { Text("Offline Recipes", color = Color.Black) },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFFC2FF87)),
                 navigationIcon = {
                     IconButton(onClick = onBack) {
@@ -76,8 +76,17 @@ fun MealOfflineScreen(onRecipeSelected: (Recipe) -> Unit, onBack: () -> Unit) {
                             Column(
                                 modifier = Modifier.weight(1f)
                             ) {
-                                Text(recipe.title, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                                Text(recipe.description, modifier = Modifier.padding(top = 4.dp))
+                                Text(
+                                    recipe.title,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 18.sp,
+                                    color = Color.Black
+                                )
+                                Text(
+                                    recipe.description,
+                                    modifier = Modifier.padding(top = 4.dp),
+                                    color = Color.Black
+                                )
                             }
                             IconButton(onClick = {
                                 val removed = SavedRecipeManager.removeRecipe(context, recipe)
