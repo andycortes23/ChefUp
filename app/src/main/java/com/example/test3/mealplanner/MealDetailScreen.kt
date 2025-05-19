@@ -11,6 +11,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import android.widget.Toast
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.Color
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -36,7 +37,8 @@ fun MealDetailScreen(recipe: Recipe, onBack: () -> Unit) {
                     }) {
                         Icon(Icons.Default.Download, contentDescription = "Download")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFFB0E57C))
             )
         }
     ) { innerPadding ->
@@ -45,17 +47,18 @@ fun MealDetailScreen(recipe: Recipe, onBack: () -> Unit) {
                 .padding(innerPadding)
                 .padding(16.dp)
         ) {
+            Divider(modifier = Modifier.padding(vertical = 8.dp))
             Text(recipe.description, fontSize = 18.sp)
             Spacer(modifier = Modifier.height(16.dp))
 
-            Text("Ingredients:", style = MaterialTheme.typography.titleMedium)
+            Text("Ingredients:", style = MaterialTheme.typography.titleLarge.copy(color = Color(0xFF388E3C)))
             recipe.ingredients.forEach { ingredient ->
                 Text("- $ingredient")
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Text("Instructions:", style = MaterialTheme.typography.titleMedium)
+            Text("Instructions:", style = MaterialTheme.typography.titleLarge.copy(color = Color(0xFF388E3C)))
             Text(recipe.instructions)
         }
     }
