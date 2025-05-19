@@ -2,7 +2,7 @@
 
 Chef Up is an Android application created to help users reduce food waste by keeping track of their kitchen inventory and suggesting recipes based on the ingredients they already have.
 
-## 🍽️ Features
+Features
 
 - AI-Powered Meal Plan Generator
   Suggests recipes based on ingredients available at home by integrating OpenAI .
