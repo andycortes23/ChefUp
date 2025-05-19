@@ -9,6 +9,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -40,6 +41,7 @@ fun MealPlanGenScreen(
     val context = LocalContext.current
     val query by viewModel.query.collectAsState()
     val recipesToShow by viewModel.recipes.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
 
     // same pill‐shape + colors as StoreFinder
     val pillShape  = RoundedCornerShape(24.dp)
@@ -108,6 +110,19 @@ fun MealPlanGenScreen(
                 }
 
                 Spacer(Modifier.height(16.dp))
+            }
+
+            if (isLoading) {
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
+                }
             }
 
             items(recipesToShow) { recipe ->

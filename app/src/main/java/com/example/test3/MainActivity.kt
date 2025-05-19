@@ -56,6 +56,14 @@ import com.example.test3.inventory.IngredientListByCategoryScreen
 import com.example.test3.settings.EditProfileScreen
 import com.example.test3.mealplanner.MealDetailScreen
 import com.example.test3.mealplanner.MealOfflineScreen
+import androidx.compose.material3.Snackbar
+import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
 
 
 /*
@@ -151,8 +159,39 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val context = LocalContext.current
-            var toastMessage by remember { mutableStateOf<String?>(null) }
+            val connectivityObserver = remember { ConnectivityObserver(context) }
+            val isOnline = remember { mutableStateOf(isNetworkAvailable(context)) }
+
+            LaunchedEffect(Unit) {
+                connectivityObserver.connectionStatus.collect {
+                    isOnline.value = isNetworkAvailable(context)
+                }
+            }
+            val snackbarHostState = remember { SnackbarHostState() }
+            val scope = rememberCoroutineScope()
             var currentScreen by remember { mutableStateOf<Screen>(Screen.Splash) }
+            var hasShownInitialStatus by remember { mutableStateOf(false) }
+            var lastOnlineState by remember { mutableStateOf<Boolean?>(null) }
+
+            LaunchedEffect(isOnline.value, currentScreen) {
+                if (currentScreen !is Screen.Splash) {
+                    if (!hasShownInitialStatus) {
+                        hasShownInitialStatus = true
+                        lastOnlineState = isOnline.value
+                        scope.launch {
+                            val message = if (isOnline.value) "Online!" else "You're offline. Some features may not work."
+                            snackbarHostState.showSnackbar(message)
+                        }
+                    } else if (lastOnlineState != isOnline.value) {
+                        lastOnlineState = isOnline.value
+                        scope.launch {
+                            val message = if (isOnline.value) "Online!" else "You're offline. Some features may not work."
+                            snackbarHostState.showSnackbar(message)
+                        }
+                    }
+                }
+            }
+            var toastMessage by remember { mutableStateOf<String?>(null) }
             var previousScreen by remember { mutableStateOf<Screen?>(null) }
 
             val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
@@ -200,6 +239,24 @@ class MainActivity : ComponentActivity() {
             }
 
             Scaffold(
+                snackbarHost = {
+                    SnackbarHost(hostState = snackbarHostState) { data ->
+                        val backgroundColor = when (data.visuals.message) {
+                            "Online!" -> Color(0xFF4CAF50) // Green
+                            "You're offline. Some features may not work." -> Color.Red
+                            else -> Color.DarkGray
+                        }
+
+                        Snackbar(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            containerColor = backgroundColor
+                        ) {
+                            Text(text = data.visuals.message, color = Color.White)
+                        }
+                    }
+                },
                 bottomBar = {
                     if (currentScreen is Screen.Home || currentScreen is Screen.Settings || currentScreen is Screen.MealPlanGen || currentScreen is Screen.AddIngredients || currentScreen is Screen.StoreFinder) {
                         BottomNavBar(
